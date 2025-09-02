@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <script type="importmap">
+      {
+        "imports": {
+          "wgpu-matrix": "https://cdn.jsdelivr.net/npm/wgpu-matrix@3.4.0/+esm"
+        }
+      }
+    </script>
+    <title>cade</title>
+    <style>
+      html, body {
+        width:  100%;
+        margin: 0;
+        background: #1a1a1a;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import {woodenBase} from "./woodenBase.js";
+
+      for (const {child} of woodenBase.children) {
+        child.display();
+      }
+    </script>
+  </body>
+</html>

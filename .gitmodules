@@ -1,0 +1,3 @@
+[submodule "cade"]
+	path = cade
+	url = https://github.com/Kipre/cade

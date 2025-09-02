@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- <link rel="stylesheet" type="text/css" href="style.css" /> -->
+    <script type="importmap">
+      {
+        "imports": {
+          "wgpu-matrix": "https://cdn.jsdelivr.net/npm/wgpu-matrix@3.4.0/+esm"
+        }
+      }
+    </script>
+    <title>cade</title>
+    <style>
+      html, body {
+        width:  100%;
+        height: 99.8%;
+        margin: 0;
+        background: #1a1a1a;
+        color: white;
+      }
+      canvas {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import "./main.js";
+    </script>
+    <canvas id="canvas" ></canvas>
+  </body>
+</html>
