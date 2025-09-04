@@ -8,15 +8,14 @@ import {
   TenonMortise,
 } from "./cade/lib/slots.js";
 import { axesArrows, nx3, ny3, x3, y3, z3, zero3 } from "./cade/lib/utils.js";
-import { norm, placeAlong, plus, rotatePoint } from "./cade/tools/2d.js";
 import {
-  dot3,
-  minus3,
-  mult3,
-  normalize3,
-  plus3,
-  proj2d,
-} from "./cade/tools/3d.js";
+  moveLine,
+  norm,
+  offsetPolyline,
+  placeAlong,
+  rotatePoint,
+} from "./cade/tools/2d.js";
+import { proj2d } from "./cade/tools/3d.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import {
@@ -59,88 +58,50 @@ tunnelPath.mirror();
 
 const tunnel = new FlatPart(tunnelPath);
 
-function addSimpleReinforcingJoin(part1, part2, l1, l2, width, thickness) {
-//   const cutouts = [];
-//   const joinCutouts = [];
-//
-//   const length = norm(l2, l1);
-//   const nbFasteners = Math.ceil(length / 250);
-//   const offset = 50;
-//   const fastenerPitch = (length - 2 * offset) / (nbFasteners - 1);
-//
-//   const joinPartPath = new Path();
-//   joinPartPath.moveTo([0, width / 2]);
-//
-//   const firstBolt = placeAlong(l1, l2, { fromStart: offset });
-//   cutouts.push(fastenerHole.translate(firstBolt));
-//   joinCutouts.push(nutHole.translate([offset, width / 2]));
-//   joinCutouts.push(nutHole.translate([offset, width / 2]).scale(1, -1));
-//
-//   let lastLocation = offset;
-//
-//   for (let i = 1; i < nbFasteners; i++) {
-//     const location = offset + i * fastenerPitch;
-//
-//     const nextBolt = placeAlong(l1, l2, { fromStart: location });
-//     cutouts.push(fastenerHole.translate(nextBolt));
-//     joinCutouts.push(nutHole.translate([location, width / 2]));
-//     joinCutouts.push(nutHole.translate([location, width / 2]).scale(1, -1));
-//
-//     const loc = (lastLocation + location) / 2;
-//     const nextMortise = placeAlong(l1, l2, { fromStart: loc });
-//     cutouts.push(mortise.translate(nextMortise));
-//     joinPartPath.merge(tenon.translate([loc, width / 2]));
-//
-//     lastLocation = location;
-//   }
-//
-//   joinPartPath.lineTo([length, width / 2]);
-//   joinPartPath.mirror([0, 0], [1, 0]);
-//   joinPartPath.close();
-//
-//   part1.addInsides(...cutouts);
-//   part2.addInsides(...cutouts);
-//
-//   // const joinPart = new FlatPart(joinPartPath, joinCutouts);
-//   const joinPart = new FlatPart(joinPartPath);
-//
-//   const transform = a2m([l1[0], -width / 2 - thickness, l1[1] - thickness / 2]);
-//
-//   const part2Transform = a2m([0, -width - thickness, 0], ny3);
-//   return [joinPart, transform, part2Transform];
-}
-//
-// const zJoin = bridgeTop - joinOffset - woodThickness / 2;
-// const [from, to] = innerBridgePath
-//   .intersectLine([-10, zJoin], [2 * xRailSupportWidth + openArea.y + 10, zJoin])
-//   .map((int) => int.point);
-//
-// const zJoin2 = openArea.z + joinOffset + woodThickness / 2;
-// const [from2, to2] = innerBridgePath
-//   .intersectLine(
-//     [-10, zJoin2],
-//     [2 * xRailSupportWidth + openArea.y + 10, zJoin2],
-//   )
-//   .map((int) => int.point);
+function computeJoinShape(child1, child2, planeMatrix) {
+  if (
+    !(child1.child instanceof FlatPart) ||
+    !(child2.child instanceof FlatPart)
+  )
+    throw new TypeError("cannot join non flat parts");
 
-// const [join, joinTransform] = addSimpleReinforcingJoin(
-//   innerBridge,
-//   outerBridge,
-//   from,
-//   to,
-//   bridgeJoinWidth,
-//   woodThickness,
-// );
-//
-//
-// const [join2, join2Transform, part2Transform] = addSimpleReinforcingJoin(
-//   innerBridge,
-//   outerBridge,
-//   from2,
-//   to2,
-//   bridgeJoinWidth,
-//   woodThickness,
-// );
+  const lines = [];
+  for (const { child: part, placement } of [child1, child2]) {
+    const planeToPart = placement.inverse().multiply(planeMatrix);
+    const ptpart = (p) => proj2d(transformPoint3(planeToPart, p));
+    const parttp = (p) => proj2d(transformPoint3(planeToPart.inverse(), p));
+
+    const normalOnPart = [
+      ptpart([0, 0, woodThickness / 2]),
+      ptpart([0, 0, woodThickness]),
+    ];
+
+    const midLine = [
+      normalOnPart[0],
+      rotatePoint(...normalOnPart, Math.PI / 2),
+    ];
+    const line = part.outside.intersectLine(
+      placeAlong(...midLine, { fromStart: -1e10 }),
+      placeAlong(...midLine, { fromEnd: 1e10 }),
+    );
+
+    if (line.length !== 2) throw new Error();
+
+    lines.push(line.map((p) => parttp([...p.point, woodThickness / 2])));
+  }
+
+  // correct offset from lines being in the middle of the thickness
+  const [[one, two], [three, four]] = [
+    offsetPolyline(lines[0], -woodThickness / 2),
+    offsetPolyline(lines[1], woodThickness / 2),
+  ];
+
+  if (norm(moveLine(one, three, four), two) > 1e-6)
+    throw new Error("problem with parrallelism or line orientation");
+
+  const join = Path.fromPolyline([one, two, four, three]);
+  return new FlatPart(join);
+}
 
 /**
  * @param {import("./cade/lib/lib.js").LocatedPart} toTab
@@ -198,11 +159,10 @@ export const woodenBase = new Assembly("wooden frame");
 
 woodenBase.addChild(innerBridge, a2m(null, ny3));
 woodenBase.addChild(tunnel, tunnelPlacement);
-woodenBase.addChild(outerBridge, a2m([0, -bridgeJoinWidth - woodThickness, 0], ny3));
-// woodenBase.addChild(join, joinTransform)
-// woodenBase.addChild(join2, join2Transform);
-
-// woodenBase.addChild(axesArrows);
+woodenBase.addChild(
+  outerBridge,
+  a2m([0, -bridgeJoinWidth - woodThickness, 0], ny3),
+);
 
 const layout = [
   new CylinderNutFastener(0.2),
@@ -211,7 +171,9 @@ const layout = [
 ];
 
 joinParts(woodenBase.children[0], woodenBase.children[1], layout);
-joinParts(woodenBase.children[1], woodenBase.children[0], [new CylinderNutFastener(0.3)]);
+joinParts(woodenBase.children[1], woodenBase.children[0], [
+  new CylinderNutFastener(0.3),
+]);
 
 joinParts(woodenBase.children[1], woodenBase.children[2], [
   new CylinderNutFastener(0.07),
@@ -219,3 +181,13 @@ joinParts(woodenBase.children[1], woodenBase.children[2], [
   new CylinderNutFastener(0.9),
 ]);
 
+const joinMatrix = a2m([0, 0, bridgeTop - joinOffset - woodThickness]);
+const join = computeJoinShape(
+  woodenBase.children[0],
+  woodenBase.children[2],
+  joinMatrix,
+);
+
+woodenBase.addChild(join, joinMatrix);
+joinParts(woodenBase.children[3], woodenBase.children[0]);
+joinParts(woodenBase.children[3], woodenBase.children[2]);
