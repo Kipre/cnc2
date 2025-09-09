@@ -21,14 +21,10 @@
   </head>
   <body>
     <script type="module">
-      import {bridge, tunnel, woodenBase} from "./woodenBase.js";
+      import { woodenBase} from "./woodenBase.js";
 
-      // for (const {child} of woodenBase.children) 
-      //   child.display();
-      for (const {child} of bridge.children) 
-        child.display();
-      for (const {child} of tunnel.children) 
-        child.display();
+      for (const {item} of Object.values(woodenBase.flatInstances())) 
+        item.display();
       
     </script>
   </body>
