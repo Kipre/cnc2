@@ -13,3 +13,4 @@ await model.loadMesh();
 await model.watch();
 // await bridge.watch();
 // await model.export("C:/Users/kipr/Downloads/test.step");
+

@@ -10,7 +10,6 @@ import { Assembly } from "./cade/lib/lib.js";
 import { CylinderNutFastener, TenonMortise } from "./cade/lib/slots.js";
 import { axesArrows, nx3, ny3, x3, y3, z3, zero3 } from "./cade/lib/utils.js";
 import { Path } from "./cade/tools/path.js";
-import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m } from "./cade/tools/transform.js";
 import {
   openArea,
@@ -59,36 +58,30 @@ halfTunnel.lineTo([bridgeJoinWidth + openArea.x / 2, openArea.z]);
 halfTunnel.close();
 
 const innerTunnel = new FlatPart("inner tunnel", woodThickness, halfTunnel);
-const place = [
-  xRailSupportWidth - woodThickness,
-  -bridgeJoinWidth - woodThickness,
-  0,
-];
-const tunnelPlacement = a2m(place, x3, y3);
 
 export const woodenBase = new Assembly("wooden frame");
 export const bridge = new Assembly("bridge");
 export const tunnel = new Assembly("tunnel");
 
-const bridgePlacement = a2m([0, -woodThickness, 0]);
+const bridgePlacement = a2m([-xRailSupportWidth, 0, 0]);
 woodenBase.addChild(bridge, bridgePlacement);
-woodenBase.addChild(
-  bridge,
-  a2m([0, openArea.y - woodThickness, 0]).scale(1, -1, 1),
-);
 
-woodenBase.addChild(tunnel);
+const mirror = new DOMMatrix()
+  .translate(openArea.x / 2, openArea.y / 2)
+  .rotate(0, 0, 180)
+  .translate(-openArea.x / 2, -openArea.y / 2);
+
+woodenBase.addChild(bridge, mirror.multiply(bridgePlacement));
+
+const tunnelPlacement = a2m([-woodThickness, -bridgeJoinWidth, 0], x3, y3);
+woodenBase.addChild(tunnel, tunnelPlacement);
 
 bridge.addChild(innerBridge, a2m([0, woodThickness, 0], ny3));
 bridge.addChild(outerBridge, a2m([0, -bridgeJoinWidth, 0], ny3));
 
-tunnel.addChild(innerTunnel, tunnelPlacement);
+tunnel.addChild(innerTunnel);
 
-const mirrorZ = new DOMMatrix().scale(
-  ...[1, 1, -1, 0, 0],
-  openArea.x / 2 + woodThickness,
-);
-tunnel.addChild(innerTunnel, tunnelPlacement.multiply(mirrorZ));
+woodenBase.addChild(tunnel, mirror.multiply(tunnelPlacement));
 
 const locatedInnerBridge = woodenBase.findChild(innerBridge);
 const locatedInnerTunnel = woodenBase.findChild(innerTunnel);
@@ -134,10 +127,3 @@ for (const zee of [
 }
 
 innerTunnel.mirror();
-
-
-// export const woodenBase = new Assembly("wooden frame");
-// const innerTunnel2 = new FlatPart("inner tunnel", woodThickness, tunnelPath);
-// innerTunnel2.addInsides(Path.makeCircle(20).translate([40, 40]))
-// innerTunnel2.mirror();
-// woodenBase.addChild(innerTunnel2);
