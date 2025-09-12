@@ -1,14 +1,15 @@
 // @ts-check
 
 import {
-  computeJoinShape,
   FlatPart,
   halfLapCrossJoin,
   joinParts,
+  makeShelfOnPlane,
+  projectPlane,
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { CylinderNutFastener, TenonMortise } from "./cade/lib/slots.js";
-import { axesArrows, nx3, ny3, x3, y3, z3, zero3 } from "./cade/lib/utils.js";
+import { nx3, ny3, x3, y3, z3, zero3 } from "./cade/lib/defaults.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m } from "./cade/tools/transform.js";
@@ -145,16 +146,32 @@ for (const zee of [
   openArea.z + joinOffset,
 ]) {
   const joinMatrix = a2m([0, 0, zee]);
-  const join = computeJoinShape(
-    bridge.findChild(innerBridge),
-    bridge.findChild(outerBridge),
+  const join = makeShelfOnPlane(
     joinMatrix,
     woodThickness,
+    bridge.findChild(innerBridge),
+    bridge.findChild(outerBridge),
   );
 
   bridge.addChild(join, joinMatrix);
-  halfLapCrossJoin(locatedInnerTunnel, woodenBase.findChild(join));
+  halfLapCrossJoin(locatedInnerTunnel, woodenBase.findChild(join), true);
   joins.push(join);
+}
+
+const tunnelJoins = [];
+for (const zee of [openArea.z - joinOffset - woodThickness, joinOffset]) {
+  const joinMatrix = a2m([0, 0, zee], z3, y3);
+  const join = makeShelfOnPlane(
+    joinMatrix,
+    woodThickness,
+    locatedInnerTunnel,
+    locatedInnerBridge,
+    locatedOuterTunnel,
+  );
+
+  tunnel.addChild(join, tunnelPlacement.inverse().multiply(joinMatrix));
+  tunnelJoins.push(join);
+  joinParts(woodenBase.findChild(join), locatedInnerBridge, centeredBolt);
 }
 
 innerBridge.mirror();
@@ -163,7 +180,11 @@ outerBridge.mirror();
 const locatedJoin = woodenBase.findChild(joins[1]);
 joinParts(locatedJoin, locatedOuterTunnel, centeredBolt);
 
-innerTunnel.mirror();
+const symmetryPlane = a2m([openArea.x / 2, openArea.y / 2, 0], y3);
+
+innerTunnel.mirror(
+  ...projectPlane(symmetryPlane, locatedInnerTunnel.placement.inverse()),
+);
 outerTunnel.mirror();
 
 for (const join of joins) {
@@ -172,4 +193,11 @@ for (const join of joins) {
   const locatedJoin = woodenBase.findChild(join);
   joinParts(locatedJoin, locatedInnerBridge, centeredBolt, null, centeredBolt);
   joinParts(locatedJoin, locatedOuterBridge);
+}
+
+for (const join of tunnelJoins) {
+  const locatedJoin = woodenBase.findChild(join);
+  join.mirror(...projectPlane(symmetryPlane, locatedJoin.placement.inverse()));
+  joinParts(locatedJoin, locatedInnerTunnel);
+  joinParts(locatedJoin, locatedOuterTunnel);
 }
