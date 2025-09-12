@@ -6,6 +6,7 @@ import {
   joinParts,
   makeShelfOnPlane,
   projectPlane,
+  spindleClearedLineTo,
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { CylinderNutFastener, TenonMortise } from "./cade/lib/slots.js";
@@ -24,11 +25,14 @@ const bridgeTopThickness = zAxisTravel;
 const bridgeTop = openArea.z + bridgeTopThickness;
 const joinOffset = 10;
 const bridgeJoinWidth = 100 - 2 * woodThickness;
+const tunnelHeight = openArea.z;
+const joinSpace = 2 * joinOffset + woodThickness;
+const spindleDiameter = 6;
 
 const halfBridgeMaker = (p, enlargement = 0) => {
   p.moveTo([xRailSupportWidth + openArea.y / 2, openArea.z]);
   p.lineTo([xRailSupportWidth - enlargement, openArea.z]);
-  p.lineTo([xRailSupportWidth - enlargement, 0]);
+  spindleClearedLineTo(p, [xRailSupportWidth - enlargement, 0], spindleDiameter / 2, true);
   p.lineTo([0, 0]);
   p.lineTo([0, bridgeTop]);
   p.lineTo([xRailSupportWidth + openArea.y / 2, bridgeTop]);
@@ -55,11 +59,11 @@ halfTunnel.moveTo([bridgeJoinWidth + openArea.x / 2 + woodThickness, 0]);
 halfTunnel.lineTo([0, 0]);
 halfTunnel.lineTo([0, bridgeTop]);
 halfTunnel.lineTo([bridgeJoinWidth, bridgeTop]);
-halfTunnel.lineTo([bridgeJoinWidth, openArea.z]);
-halfTunnel.lineTo([
+halfTunnel.lineTo([bridgeJoinWidth, tunnelHeight]);
+spindleClearedLineTo(halfTunnel, [
   bridgeJoinWidth + openArea.x / 2 + woodThickness,
-  openArea.z,
-]);
+  tunnelHeight,
+], spindleDiameter / 2);
 halfTunnel.close();
 halfTunnel.translate([-woodThickness, 0]);
 
@@ -73,8 +77,8 @@ halfOuterTunnel.moveTo([0, 0]);
 halfOuterTunnel.lineTo([fullWidth, 0]);
 halfOuterTunnel.lineTo([fullWidth, bridgeTop - 100]);
 halfOuterTunnel.lineTo([openArea.x / 2 - joinOffset, bridgeTop - 100]);
-halfOuterTunnel.lineTo([openArea.x / 2 - joinOffset, openArea.z]);
-halfOuterTunnel.lineTo([0, openArea.z]);
+halfOuterTunnel.lineTo([openArea.x / 2 - joinOffset, tunnelHeight]);
+halfOuterTunnel.lineTo([0, tunnelHeight]);
 halfOuterTunnel.close();
 halfOuterTunnel = halfOuterTunnel
   .scale(-1, 1)
@@ -159,7 +163,7 @@ for (const zee of [
 }
 
 const tunnelJoins = [];
-for (const zee of [openArea.z - joinOffset - woodThickness, joinOffset]) {
+for (const zee of [tunnelHeight - joinOffset - woodThickness, joinOffset]) {
   const joinMatrix = a2m([0, 0, zee], z3, y3);
   const join = makeShelfOnPlane(
     joinMatrix,
@@ -180,12 +184,28 @@ outerBridge.mirror();
 const locatedJoin = woodenBase.findChild(joins[1]);
 joinParts(locatedJoin, locatedOuterTunnel, centeredBolt);
 
+outerTunnel.addInsides(
+  Path.makeRoundedRectangle(
+    bridgeJoinWidth - 2 * joinOffset,
+    tunnelHeight - joinSpace,
+    10
+  ).translate([joinOffset, joinSpace]),
+);
+
 const symmetryPlane = a2m([openArea.x / 2, openArea.y / 2, 0], y3);
 
 innerTunnel.mirror(
   ...projectPlane(symmetryPlane, locatedInnerTunnel.placement.inverse()),
 );
 outerTunnel.mirror();
+
+outerTunnel.addInsides(
+  Path.makeRoundedRectangle(
+    openArea.x - 2 * joinOffset,
+    tunnelHeight - 2 * joinSpace - 30,
+    10
+  ).translate([bridgeJoinWidth + joinSpace - joinOffset, joinSpace + 15]),
+);
 
 for (const join of joins) {
   const center = openArea.x / 2 + xRailSupportWidth;
