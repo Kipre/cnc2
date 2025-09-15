@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <script type="importmap">
+      {
+        "imports": {
+          "wgpu-matrix": "https://cdn.jsdelivr.net/npm/wgpu-matrix@3.4.0/+esm"
+        }
+      }
+    </script>
+    <title>cade</title>
+    <style>
+      html, body {
+        width:  100%;
+        margin: 0;
+        background: #1a1a1a;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas><canvas/>
+    <script type="module">
+      import {bolt, washer, cylinderNut} from "./fasteners.js";
+      import {Assembly} from "./cade/lib/lib.js";
+      
+      const temp = new Assembly("test");
+      temp.addChild(bolt);
+      // temp.addChild(washer);
+      // temp.addChild(cylinderNut);
+      console.log(bolt);
+
+      await temp.loadMesh();
+      await temp.watch();
+
+      // for (const {item} of Object.values(woodenBase.flatInstances())) 
+      //   item.display();
+      
+    </script>
+  </body>
+</html>
