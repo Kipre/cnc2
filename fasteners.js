@@ -38,7 +38,7 @@ const cylinderLength = 13;
 export const cylinderDiameter = 10;
 
 const cylinder = extrusion(
-  a2m([0, -cylinderLength / 2, 0], x3, nz3),
+  a2m([-cylinderLength / 2, 0, 0], x3, nz3),
   cylinderLength,
   Path.makeCircle(cylinderDiameter / 2),
 );

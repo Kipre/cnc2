@@ -20,23 +20,21 @@
     </style>
   </head>
   <body>
-    <canvas><canvas/>
+    <canvas style="width: 95vw; height: 95vh"><canvas/>
     <script type="module">
       import {bolt, washer, cylinderNut} from "./fasteners.js";
-      import {Assembly} from "./cade/lib/lib.js";
+      import {Assembly, Model} from "./cade/lib/lib.js";
+      import {a2m} from "./cade/tools/transform.js";
       
-      const temp = new Assembly("test");
+      const temp = new Model("test");
       temp.addChild(bolt);
-      // temp.addChild(washer);
-      // temp.addChild(cylinderNut);
-      console.log(bolt);
+      temp.addChild(washer, a2m([0, 0, 4]));
+      temp.addChild(cylinderNut, a2m([0, 0, 30]));
 
       await temp.loadMesh();
       await temp.watch();
+      await temp.export("hello");
 
-      // for (const {item} of Object.values(woodenBase.flatInstances())) 
-      //   item.display();
-      
     </script>
   </body>
 </html>
