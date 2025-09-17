@@ -1,5 +1,6 @@
 // @ts-check
 
+import { nx3, ny3, x3, y3, z3, zero3 } from "./cade/lib/defaults.js";
 import {
   FlatPart,
   halfLapCrossJoin,
@@ -9,10 +10,9 @@ import {
   spindleClearedLineTo,
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
-import { CylinderNutFastener, TenonMortise } from "./cade/lib/slots.js";
-import { nx3, ny3, x3, y3, z3, zero3 } from "./cade/lib/defaults.js";
+import { TenonMortise } from "./cade/lib/slots.js";
+import { CylinderNutFastener, defaultSlotLayout } from "./fasteners.js";
 import { Path } from "./cade/tools/path.js";
-import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m } from "./cade/tools/transform.js";
 import {
   openArea,
@@ -120,7 +120,6 @@ woodenBase.addChild(tunnel, mirror.multiply(tunnelPlacement));
 
 const locatedInnerBridge = woodenBase.findChild(innerBridge);
 const locatedInnerTunnel = woodenBase.findChild(innerTunnel);
-const locatedOuterBridge = woodenBase.findChild(outerBridge);
 const locatedOuterTunnel = woodenBase.findChild(outerTunnel);
 
 const layout = [
@@ -130,19 +129,19 @@ const layout = [
 ];
 const centeredBolt = [new CylinderNutFastener(0.5)];
 
-joinParts(locatedInnerBridge, locatedInnerTunnel, layout);
-joinParts(locatedInnerTunnel, locatedInnerBridge, [
+joinParts(woodenBase, innerBridge, innerTunnel, layout);
+joinParts(woodenBase, innerTunnel, innerBridge, [
   new CylinderNutFastener(0.3),
 ]);
 
-joinParts(locatedInnerTunnel, locatedOuterBridge, [
+joinParts(woodenBase, innerTunnel, outerBridge, [
   new CylinderNutFastener(0.07),
   new TenonMortise(0.25),
   new CylinderNutFastener(0.85),
 ]);
 
-joinParts(locatedInnerBridge, locatedOuterTunnel, layout);
-joinParts(locatedOuterBridge, locatedOuterTunnel, layout);
+joinParts(woodenBase, innerBridge, outerTunnel, layout);
+joinParts(woodenBase, outerBridge, outerTunnel, layout);
 
 const joins = [];
 for (const zee of [
@@ -175,14 +174,13 @@ for (const zee of [tunnelHeight - joinOffset - woodThickness, joinOffset]) {
 
   tunnel.addChild(join, tunnelPlacement.inverse().multiply(joinMatrix));
   tunnelJoins.push(join);
-  joinParts(woodenBase.findChild(join), locatedInnerBridge, centeredBolt);
+  joinParts(woodenBase, join, innerBridge, centeredBolt);
 }
 
 innerBridge.mirror();
 outerBridge.mirror();
 
-const locatedJoin = woodenBase.findChild(joins[1]);
-joinParts(locatedJoin, locatedOuterTunnel, centeredBolt);
+joinParts(woodenBase, joins[1], outerTunnel, centeredBolt);
 
 outerTunnel.addInsides(
   Path.makeRoundedRectangle(
@@ -210,14 +208,13 @@ outerTunnel.addInsides(
 for (const join of joins) {
   const center = openArea.x / 2 + xRailSupportWidth;
   join.mirror([center, 0], [center, 1]);
-  const locatedJoin = woodenBase.findChild(join);
-  joinParts(locatedJoin, locatedInnerBridge, centeredBolt, null, centeredBolt);
-  joinParts(locatedJoin, locatedOuterBridge);
+  joinParts(bridge, join, innerBridge, centeredBolt, defaultSlotLayout, centeredBolt);
+  joinParts(bridge, join, outerBridge, defaultSlotLayout);
 }
 
 for (const join of tunnelJoins) {
   const locatedJoin = woodenBase.findChild(join);
   join.mirror(...projectPlane(symmetryPlane, locatedJoin.placement.inverse()));
-  joinParts(locatedJoin, locatedInnerTunnel);
-  joinParts(locatedJoin, locatedOuterTunnel);
+  joinParts(tunnel, join, innerTunnel, defaultSlotLayout);
+  joinParts(tunnel, join, outerTunnel, defaultSlotLayout);
 }
