@@ -2,6 +2,7 @@
 
 import { nx3, ny3, x3, y3, z3, zero3 } from "./cade/lib/defaults.js";
 import {
+    cloneChildrenWithTransform,
   FlatPart,
   halfLapCrossJoin,
   joinParts,
@@ -11,7 +12,7 @@ import {
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { TenonMortise } from "./cade/lib/slots.js";
-import { CylinderNutFastener, defaultSlotLayout } from "./fasteners.js";
+import { CylinderNutFastener, defaultSlotLayout, m6Fastener } from "./fasteners.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m } from "./cade/tools/transform.js";
 import {
@@ -218,3 +219,5 @@ for (const join of tunnelJoins) {
   joinParts(tunnel, join, innerTunnel, defaultSlotLayout);
   joinParts(tunnel, join, outerTunnel, defaultSlotLayout);
 }
+
+cloneChildrenWithTransform(woodenBase, m6Fastener, mirror);

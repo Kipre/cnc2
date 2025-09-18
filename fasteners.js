@@ -69,10 +69,10 @@ const washerShape = extrusion(
 export const washer = new Part("m6 washer", washerShape);
 washer.material = metalMaterial;
 
-const fastener = new Assembly("fastener");
-fastener.addChild(bolt, a2m([0, 0, -headThickness - washerThickness]));
-fastener.addChild(washer, a2m([0, 0, -washerThickness]));
-fastener.addChild(cylinderNut, a2m([0, 0, 30]));
+export const m6Fastener = new Assembly("fastener");
+m6Fastener.addChild(bolt, a2m([0, 0, -headThickness - washerThickness]));
+m6Fastener.addChild(washer, a2m([0, 0, -washerThickness]));
+m6Fastener.addChild(cylinderNut, a2m([0, 0, 30]));
 
 export class CylinderNutFastener extends BaseSlot {
   /**
@@ -104,7 +104,7 @@ export class CylinderNutFastener extends BaseSlot {
 
     part.addInsides(this.nutHole.translate(center));
 
-    return { path: this.boltHole, fastener };
+    return { path: this.boltHole, fastener: m6Fastener };
   }
 }
 
