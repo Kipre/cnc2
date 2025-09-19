@@ -1,8 +1,8 @@
 // @ts-check
 
-import { nx3, ny3, x3, y3, z3, zero3 } from "./cade/lib/defaults.js";
+import { nx3, ny3, nz3, x3, y3, z3, zero3 } from "./cade/lib/defaults.js";
 import {
-    cloneChildrenWithTransform,
+  cloneChildrenWithTransform,
   FlatPart,
   halfLapCrossJoin,
   joinParts,
@@ -12,7 +12,11 @@ import {
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { TenonMortise } from "./cade/lib/slots.js";
-import { CylinderNutFastener, defaultSlotLayout, m6Fastener } from "./fasteners.js";
+import {
+  CylinderNutFastener,
+  defaultSlotLayout,
+  m6Fastener,
+} from "./fasteners.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m } from "./cade/tools/transform.js";
 import {
@@ -21,6 +25,7 @@ import {
   xRailSupportWidth,
   zAxisTravel,
 } from "./dimensions.js";
+import { yRail } from "./rails.js";
 
 const bridgeTopThickness = zAxisTravel;
 const bridgeTop = openArea.z + bridgeTopThickness;
@@ -33,7 +38,12 @@ const spindleDiameter = 6;
 const halfBridgeMaker = (p, enlargement = 0) => {
   p.moveTo([xRailSupportWidth + openArea.y / 2, openArea.z]);
   p.lineTo([xRailSupportWidth - enlargement, openArea.z]);
-  spindleClearedLineTo(p, [xRailSupportWidth - enlargement, 0], spindleDiameter / 2, true);
+  spindleClearedLineTo(
+    p,
+    [xRailSupportWidth - enlargement, 0],
+    spindleDiameter / 2,
+    true,
+  );
   p.lineTo([0, 0]);
   p.lineTo([0, bridgeTop]);
   p.lineTo([xRailSupportWidth + openArea.y / 2, bridgeTop]);
@@ -61,10 +71,11 @@ halfTunnel.lineTo([0, 0]);
 halfTunnel.lineTo([0, bridgeTop]);
 halfTunnel.lineTo([bridgeJoinWidth, bridgeTop]);
 halfTunnel.lineTo([bridgeJoinWidth, tunnelHeight]);
-spindleClearedLineTo(halfTunnel, [
-  bridgeJoinWidth + openArea.x / 2 + woodThickness,
-  tunnelHeight,
-], spindleDiameter / 2);
+spindleClearedLineTo(
+  halfTunnel,
+  [bridgeJoinWidth + openArea.x / 2 + woodThickness, tunnelHeight],
+  spindleDiameter / 2,
+);
 halfTunnel.close();
 halfTunnel.translate([-woodThickness, 0]);
 
@@ -131,9 +142,7 @@ const layout = [
 const centeredBolt = [new CylinderNutFastener(0.5)];
 
 joinParts(woodenBase, innerBridge, innerTunnel, layout);
-joinParts(woodenBase, innerTunnel, innerBridge, [
-  new CylinderNutFastener(0.3),
-]);
+joinParts(woodenBase, innerTunnel, innerBridge, [new CylinderNutFastener(0.3)]);
 
 joinParts(woodenBase, innerTunnel, outerBridge, [
   new CylinderNutFastener(0.07),
@@ -187,7 +196,7 @@ outerTunnel.addInsides(
   Path.makeRoundedRectangle(
     bridgeJoinWidth - 2 * joinOffset,
     tunnelHeight - joinSpace,
-    10
+    10,
   ).translate([joinOffset, joinSpace]),
 );
 
@@ -202,14 +211,21 @@ outerTunnel.addInsides(
   Path.makeRoundedRectangle(
     openArea.x - 2 * joinOffset,
     tunnelHeight - 2 * joinSpace - 30,
-    10
+    10,
   ).translate([bridgeJoinWidth + joinSpace - joinOffset, joinSpace + 15]),
 );
 
 for (const join of joins) {
   const center = openArea.x / 2 + xRailSupportWidth;
   join.mirror([center, 0], [center, 1]);
-  joinParts(bridge, join, innerBridge, centeredBolt, defaultSlotLayout, centeredBolt);
+  joinParts(
+    bridge,
+    join,
+    innerBridge,
+    centeredBolt,
+    defaultSlotLayout,
+    centeredBolt,
+  );
   joinParts(bridge, join, outerBridge, defaultSlotLayout);
 }
 
@@ -221,3 +237,16 @@ for (const join of tunnelJoins) {
 }
 
 cloneChildrenWithTransform(woodenBase, m6Fastener, mirror);
+
+tunnel.addChild(
+  yRail,
+  a2m(
+    [
+      bridgeJoinWidth + woodThickness,
+      openArea.z - joinOffset,
+      -bridgeJoinWidth / 2 - woodThickness / 2,
+    ],
+    x3,
+    nz3,
+  ),
+);

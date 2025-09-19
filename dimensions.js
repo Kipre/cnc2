@@ -1,5 +1,5 @@
 const xRailLength = 1000;
-const yRailLength = 1000;
+export const yRailLength = 1000;
 const zRailLength = 350;
 
 export const woodThickness = 15;
