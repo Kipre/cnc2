@@ -24,6 +24,7 @@
       import { woodenBase} from "./woodenBase.js";
 
       for (const {item} of Object.values(woodenBase.flatInstances())) 
+      if (item.display)
         item.display();
       
     </script>

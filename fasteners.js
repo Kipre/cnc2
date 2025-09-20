@@ -12,30 +12,109 @@ import { minus, placeAlong, rotatePoint } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m } from "./cade/tools/transform.js";
 
-const D = 6.0; // nominal major diameter (mm)
-const pitch = 1.0; // mm (M6 coarse)
-const threadHeight = 0.5 * pitch; // approx thread height
-const shankLength = 35.0; // mm overall shank length
-const headAcrossFlats = 10.0; // mm typical for M6 hex head
 const headThickness = 4.0; // mm
-const extraHeadChamfer = 0.5; // small chamfer under head
-const threadLength = shankLength - headThickness - 1.0; // leave some unthreaded under head
+const washerThickness = 1;
 
-const headPath = Path.fromPolyline(
-  Array.from({ length: 6 }, (_, i) =>
-    rotatePoint(zero2, [headAcrossFlats / 2, 0], (i * 2 * Math.PI) / 6),
-  ),
-);
+const isoFastenerSizes = {
+  M3: {
+    headSize: 5.5,
+    pitch: 0.5,
+    diameter: 3,
+    boltHeadThickness: 2,
+    nutThickness: 2.4,
+    washerOuterDiameter: 7,
+    washerInnerDiameter: 3.2,
+  },
+  M4: {
+    headSize: 7,
+    pitch: 0.7,
+    diameter: 4,
+    boltHeadThickness: 2.8,
+    nutThickness: 3.2,
+    washerOuterDiameter: 9,
+    washerInnerDiameter: 4.3,
+  },
+  M5: {
+    headSize: 8,
+    pitch: 0.8,
+    diameter: 5,
+    boltHeadThickness: 3.5,
+    nutThickness: 4,
+    washerOuterDiameter: 10,
+    washerInnerDiameter: 5.3,
+  },
+  M6: {
+    headSize: 10,
+    pitch: 1,
+    diameter: 6,
+    boltHeadThickness: 4,
+    nutThickness: 5,
+    washerOuterDiameter: 12,
+    washerInnerDiameter: 6.4,
+  },
+  M8: {
+    headSize: 13,
+    pitch: 1.25,
+    diameter: 8,
+    boltHeadThickness: 5.3,
+    nutThickness: 6.5,
+    washerOuterDiameter: 16,
+    washerInnerDiameter: 8.4,
+  },
+};
 
-const head = extrusion(a2m(), headThickness, headPath);
-const shank = extrusion(
-  a2m([0, 0, headThickness]),
-  shankLength,
-  Path.makeCircle(D / 2),
-);
+/**
+ * @param {"M3" | "M4" | "M5" | "M6" | "M8"} size
+ * @param {number} length
+ */
+function makeBolt(size, length) {
+  const { diameter, headSize, boltHeadThickness } = isoFastenerSizes[size];
+  const headPath = Path.fromPolyline(
+    Array.from({ length: 6 }, (_, i) =>
+      rotatePoint(zero2, [headSize / 2, 0], (i * 2 * Math.PI) / 6),
+    ),
+  );
 
-export const bolt = new Part("m6 bolt", fuse(head, shank));
-bolt.material = metalMaterial;
+  const head = extrusion(
+    a2m([0, 0, -washerThickness - boltHeadThickness]),
+    boltHeadThickness,
+    headPath,
+  );
+  const shank = extrusion(
+    a2m([0, 0, -washerThickness]),
+    length,
+    Path.makeCircle(diameter / 2),
+  );
+
+  const bolt = new Part(`${size} bolt`, fuse(head, shank));
+  bolt.material = metalMaterial;
+  bolt.symmetries = [0, 0, NaN];
+  return bolt;
+}
+
+/**
+ * @param {"M3" | "M4" | "M5" | "M6" | "M8"} size
+ */
+function makeNut(size) {
+  const { diameter, headSize, nutThickness } = isoFastenerSizes[size];
+  const headPath = Path.fromPolyline(
+    Array.from({ length: 6 }, (_, i) =>
+      rotatePoint(zero2, [headSize / 2, 0], (i * 2 * Math.PI) / 6),
+    ),
+  );
+
+  const head = extrusion(
+    a2m([0, 0, -washerThickness - nutThickness]),
+    nutThickness,
+    headPath,
+    Path.makeCircle(diameter / 2),
+  );
+
+  const nut = new Part(`${size} nut`, head);
+  nut.material = metalMaterial;
+  nut.symmetries = [0, 0, NaN];
+  return nut;
+}
 
 const cylinderLength = 13;
 export const cylinderDiameter = 10;
@@ -49,29 +128,42 @@ const cylinder = extrusion(
 const hole = extrusion(
   a2m([0, 0, -cylinderDiameter]),
   cylinderDiameter * 2,
-  Path.makeCircle(D / 2),
+  Path.makeCircle(6 / 2),
 );
 
 export const cylinderNut = new Part("m6 cylinder nut", cut(cylinder, hole));
 cylinderNut.material = metalMaterial;
 
-const washerThickness = 1;
-const washerOuter = 13.72;
-const washerInner = 6.1;
+/**
+ * @param {"M3" | "M4" | "M5" | "M6" | "M8"} size
+ */
+function makeWasher(size) {
+  const { washerOuterDiameter, washerInnerDiameter } = isoFastenerSizes[size];
 
-const washerShape = extrusion(
-  a2m(),
-  washerThickness,
-  Path.makeCircle(washerOuter / 2),
-  Path.makeCircle(washerInner / 2),
-);
+  const washerShape = extrusion(
+    a2m([0, 0, -washerThickness]),
+    washerThickness,
+    Path.makeCircle(washerOuterDiameter / 2),
+    Path.makeCircle(washerInnerDiameter / 2),
+  );
 
-export const washer = new Part("m6 washer", washerShape);
-washer.material = metalMaterial;
+  const washer = new Part(`${size} washer`, washerShape);
+  washer.material = metalMaterial;
+  washer.symmetries = [0, 0, NaN];
+  return washer;
+}
+
+export const m6Washer = makeWasher("M6");
+export const m5Washer = makeWasher("M5");
+
+export const m6Bolt = makeBolt("M6", 35);
+export const m5Bolt = makeBolt("M5", 30);
+
+export const m5Nut = makeNut("M5");
 
 export const m6Fastener = new Assembly("fastener");
-m6Fastener.addChild(bolt, a2m([0, 0, -headThickness - washerThickness]));
-m6Fastener.addChild(washer, a2m([0, 0, -washerThickness]));
+m6Fastener.addChild(m6Bolt);
+m6Fastener.addChild(m6Washer);
 m6Fastener.addChild(cylinderNut, a2m([0, 0, 30]));
 m6Fastener.symmetries = [0, 0, NaN];
 

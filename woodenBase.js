@@ -26,7 +26,7 @@ import {
   zAxisTravel,
   yRailEndSpace,
 } from "./dimensions.js";
-import { yRail } from "./rails.js";
+import { fastenSubpartToFlatPart, yRail } from "./rails.js";
 
 const bridgeTopThickness = zAxisTravel;
 const bridgeTop = openArea.z + bridgeTopThickness;
@@ -248,6 +248,8 @@ tunnel.addChild(
     nz3,
   ),
 );
+
+fastenSubpartToFlatPart(tunnel, yRail, tunnelJoins[0]);
 
 woodenBase.addChild(
   tunnel.mirror(),
