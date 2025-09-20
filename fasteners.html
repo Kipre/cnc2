@@ -24,15 +24,29 @@
     <script type="module">
       import {bolt, washer, cylinderNut} from "./fasteners.js";
       import {Assembly, Model} from "./cade/lib/lib.js";
+      import {Part} from "./cade/lib/part.js";
+      import {FlatPart} from "./cade/lib/flat.js";
+      import {extrusion} from "./cade/lib/operations.js";
       import {a2m} from "./cade/tools/transform.js";
+      import {nz3, ny3, nx3, x3, y3} from "./cade/lib/defaults.js";
+      import {Path} from "./cade/tools/path.js";
       
-      const temp = new Model("test");
-      temp.addChild(bolt);
-      temp.addChild(washer, a2m([0, 0, 4]));
-      temp.addChild(cylinderNut, a2m([0, 0, 30]));
 
-      await temp.loadMesh();
-      await temp.watch();
+  const part1 = new Part("test", extrusion(a2m([0, 0, -15]), 30, Path.makeCircle(10)));
+  part1.symmetries = [1, 1, 0];
+  const part2 = new FlatPart("flat", 20, Path.makeRoundedRect(100, 50, 4));
+  const temp = new Assembly("ass");
+
+  temp.addChild(part1, a2m([50, 40, 36])); 
+  temp.addChild(part1, a2m([-16, 10, -10], x3, nz3)); 
+  temp.addChild(part2, a2m([0, 0, 0])); 
+  temp.addChild(part2, a2m([100, 0, -50], y3, nx3)); 
+
+  const sup = new Assembly("ass");
+  sup.addChild(temp);
+  sup.addChild(temp.mirror(), a2m([0, 0, 100]));
+      await sup.loadMesh();
+      await sup.watch();
       // await temp.export("hello");
 
     </script>

@@ -8,9 +8,11 @@ export const xRailSupportWidth = 100;
 
 export const zAxisTravel = zRailLength - carrierWheelbase;
 
+export const yRailEndSpace = 20;
+
 export const openArea = {
   x: xRailLength,
-  y: yRailLength,
+  y: yRailLength + 3 * yRailEndSpace,
   z: zAxisTravel,
 };
 

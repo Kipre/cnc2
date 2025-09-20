@@ -24,19 +24,20 @@ import {
   woodThickness,
   xRailSupportWidth,
   zAxisTravel,
+  yRailEndSpace,
 } from "./dimensions.js";
 import { yRail } from "./rails.js";
 
 const bridgeTopThickness = zAxisTravel;
 const bridgeTop = openArea.z + bridgeTopThickness;
 const joinOffset = 10;
-const bridgeJoinWidth = 100 - 2 * woodThickness;
+const joinWidth = 100 - 2 * woodThickness;
 const tunnelHeight = openArea.z;
 const joinSpace = 2 * joinOffset + woodThickness;
 const spindleDiameter = 6;
 
 const halfBridgeMaker = (p, enlargement = 0) => {
-  p.moveTo([xRailSupportWidth + openArea.y / 2, openArea.z]);
+  p.moveTo([xRailSupportWidth + openArea.x / 2, openArea.z]);
   p.lineTo([xRailSupportWidth - enlargement, openArea.z]);
   spindleClearedLineTo(
     p,
@@ -46,7 +47,7 @@ const halfBridgeMaker = (p, enlargement = 0) => {
   );
   p.lineTo([0, 0]);
   p.lineTo([0, bridgeTop]);
-  p.lineTo([xRailSupportWidth + openArea.y / 2, bridgeTop]);
+  p.lineTo([xRailSupportWidth + openArea.x / 2, bridgeTop]);
   p.fillet(100);
   p.close();
   return p;
@@ -66,14 +67,14 @@ const outerBridge = new FlatPart(
 );
 
 const halfTunnel = new Path();
-halfTunnel.moveTo([bridgeJoinWidth + openArea.x / 2 + woodThickness, 0]);
+halfTunnel.moveTo([joinWidth + openArea.y / 2 + woodThickness, 0]);
 halfTunnel.lineTo([0, 0]);
 halfTunnel.lineTo([0, bridgeTop]);
-halfTunnel.lineTo([bridgeJoinWidth, bridgeTop]);
-halfTunnel.lineTo([bridgeJoinWidth, tunnelHeight]);
+halfTunnel.lineTo([joinWidth, bridgeTop]);
+halfTunnel.lineTo([joinWidth, tunnelHeight]);
 spindleClearedLineTo(
   halfTunnel,
-  [bridgeJoinWidth + openArea.x / 2 + woodThickness, tunnelHeight],
+  [joinWidth + openArea.y / 2 + woodThickness, tunnelHeight],
   spindleDiameter / 2,
 );
 halfTunnel.close();
@@ -81,15 +82,14 @@ halfTunnel.translate([-woodThickness, 0]);
 
 const innerTunnel = new FlatPart("inner tunnel", woodThickness, halfTunnel);
 
-const fullWidth =
-  bridgeJoinWidth + openArea.x / 2 + 2 * woodThickness + joinOffset;
+const fullWidth = joinWidth + openArea.y / 2 + 2 * woodThickness + joinOffset;
 
 let halfOuterTunnel = new Path();
 halfOuterTunnel.moveTo([0, 0]);
 halfOuterTunnel.lineTo([fullWidth, 0]);
 halfOuterTunnel.lineTo([fullWidth, bridgeTop - 100]);
-halfOuterTunnel.lineTo([openArea.x / 2 - joinOffset, bridgeTop - 100]);
-halfOuterTunnel.lineTo([openArea.x / 2 - joinOffset, tunnelHeight]);
+halfOuterTunnel.lineTo([openArea.y / 2 - joinOffset, bridgeTop - 100]);
+halfOuterTunnel.lineTo([openArea.y / 2 - joinOffset, tunnelHeight]);
 halfOuterTunnel.lineTo([0, tunnelHeight]);
 halfOuterTunnel.close();
 halfOuterTunnel = halfOuterTunnel
@@ -119,16 +119,14 @@ const mirror = new DOMMatrix()
 woodenBase.addChild(bridge, mirror.multiply(bridgePlacement));
 
 const tunnelPlacement = a2m(
-  [-woodThickness, -bridgeJoinWidth - woodThickness, 0],
+  [-woodThickness, -joinWidth - woodThickness, 0],
   x3,
   y3,
 );
 woodenBase.addChild(tunnel, tunnelPlacement);
 
 bridge.addChild(innerBridge, a2m([0, woodThickness, 0], ny3));
-bridge.addChild(outerBridge, a2m([0, -bridgeJoinWidth, 0], ny3));
-
-woodenBase.addChild(tunnel, mirror.multiply(tunnelPlacement));
+bridge.addChild(outerBridge, a2m([0, -joinWidth, 0], ny3));
 
 const locatedInnerBridge = woodenBase.findChild(innerBridge);
 const locatedInnerTunnel = woodenBase.findChild(innerTunnel);
@@ -193,8 +191,8 @@ outerBridge.mirror();
 joinParts(woodenBase, joins[1], outerTunnel, centeredBolt);
 
 outerTunnel.addInsides(
-  Path.makeRoundedRectangle(
-    bridgeJoinWidth - 2 * joinOffset,
+  Path.makeRoundedRect(
+    joinWidth - 2 * joinOffset,
     tunnelHeight - joinSpace,
     10,
   ).translate([joinOffset, joinSpace]),
@@ -208,11 +206,11 @@ innerTunnel.mirror(
 outerTunnel.mirror();
 
 outerTunnel.addInsides(
-  Path.makeRoundedRectangle(
+  Path.makeRoundedRect(
     openArea.x - 2 * joinOffset,
     tunnelHeight - 2 * joinSpace - 30,
     10,
-  ).translate([bridgeJoinWidth + joinSpace - joinOffset, joinSpace + 15]),
+  ).translate([joinWidth + joinSpace - joinOffset, joinSpace + 15]),
 );
 
 for (const join of joins) {
@@ -242,11 +240,18 @@ tunnel.addChild(
   yRail,
   a2m(
     [
-      bridgeJoinWidth + woodThickness,
+      joinWidth + woodThickness + yRailEndSpace,
       openArea.z - joinOffset,
-      -bridgeJoinWidth / 2 - woodThickness / 2,
+      -joinWidth / 2 - woodThickness / 2,
     ],
     x3,
     nz3,
   ),
+);
+
+woodenBase.addChild(
+  tunnel.mirror(),
+  new DOMMatrix()
+    .translate(openArea.x + 2 * woodThickness)
+    .multiply(tunnelPlacement),
 );

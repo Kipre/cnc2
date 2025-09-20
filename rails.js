@@ -34,5 +34,6 @@ yRailProfile.mirror();
 
 const body = extrusion(a2m(), yRailLength, yRailProfile);
 
-export const yRail = new Part("m6 bolt", body);
+export const yRail = new Part("y rail", body);
 yRail.material = metalMaterial;
+yRail.symmetries = [0, NaN, 0];

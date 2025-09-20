@@ -73,6 +73,7 @@ export const m6Fastener = new Assembly("fastener");
 m6Fastener.addChild(bolt, a2m([0, 0, -headThickness - washerThickness]));
 m6Fastener.addChild(washer, a2m([0, 0, -washerThickness]));
 m6Fastener.addChild(cylinderNut, a2m([0, 0, 30]));
+m6Fastener.symmetries = [0, 0, NaN];
 
 export class CylinderNutFastener extends BaseSlot {
   /**
