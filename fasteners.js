@@ -144,7 +144,7 @@ function makeWasher(size) {
     a2m([0, 0, -washerThickness]),
     washerThickness,
     Path.makeCircle(washerOuterDiameter / 2),
-    Path.makeCircle(washerInnerDiameter / 2),
+    Path.makeCircle(washerInnerDiameter / 2).invert(),
   );
 
   const washer = new Part(`${size} washer`, washerShape);

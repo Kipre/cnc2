@@ -1,18 +1,18 @@
 // @ts-check
 
+import { nz3, x3, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
+import { FlatPart } from "./cade/lib/flat.js";
+import { Assembly } from "./cade/lib/lib.js";
+import { metalMaterial } from "./cade/lib/materials.js";
 import { cut, extrusion, fuse, multiExtrusion } from "./cade/lib/operations.js";
+import { Part } from "./cade/lib/part.js";
+import { norm, placeAlong } from "./cade/tools/2d.js";
+import { proj2d } from "./cade/tools/3d.js";
 import { getCircleCenter, intersectLineAndArc } from "./cade/tools/circle.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
-import { nz3, x3, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
-import { Part } from "./cade/lib/part.js";
-import { metalMaterial } from "./cade/lib/materials.js";
 import { yRailLength } from "./dimensions.js";
-import { Assembly } from "./cade/lib/lib.js";
-import { FlatPart } from "./cade/lib/flat.js";
-import { norm, placeAlong } from "./cade/tools/2d.js";
-import { proj2d } from "./cade/tools/3d.js";
 import { m5Bolt, m5Nut, m5Washer } from "./fasteners.js";
 
 const yRailWidth = 30;

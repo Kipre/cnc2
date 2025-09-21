@@ -27,6 +27,7 @@ import {
   yRailEndSpace,
 } from "./dimensions.js";
 import { fastenSubpartToFlatPart, yRail } from "./rails.js";
+import { screwAssy } from "./screw.js";
 
 const bridgeTopThickness = zAxisTravel;
 const bridgeTop = openArea.z + bridgeTopThickness;
@@ -248,6 +249,8 @@ tunnel.addChild(
     nz3,
   ),
 );
+
+woodenBase.addChild(screwAssy, a2m([-200, -200, -200]));
 
 fastenSubpartToFlatPart(tunnel, yRail, tunnelJoins[0]);
 
