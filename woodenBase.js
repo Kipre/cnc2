@@ -3,6 +3,7 @@
 import { nx3, ny3, nz3, x3, y3, z3, zero3 } from "./cade/lib/defaults.js";
 import {
   cloneChildrenWithTransform,
+  findFlatPartIntersection,
   FlatPart,
   halfLapCrossJoin,
   joinParts,
@@ -18,7 +19,7 @@ import {
   m6Fastener,
 } from "./fasteners.js";
 import { Path } from "./cade/tools/path.js";
-import { a2m } from "./cade/tools/transform.js";
+import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import {
   openArea,
   woodThickness,
@@ -28,6 +29,7 @@ import {
 } from "./dimensions.js";
 import { fastenSubpartToFlatPart, yRail } from "./rails.js";
 import { screwAssy } from "./screw.js";
+import { minus3, mult3 } from "./cade/tools/3d.js";
 
 const bridgeTopThickness = zAxisTravel;
 const bridgeTop = openArea.z + bridgeTopThickness;
@@ -250,9 +252,25 @@ tunnel.addChild(
   ),
 );
 
-woodenBase.addChild(screwAssy, a2m([-200, -200, -200]));
 
 fastenSubpartToFlatPart(tunnel, yRail, tunnelJoins[0]);
+
+{
+  const locatedMirroredInnerBridge = woodenBase.findChildInstances(innerBridge)[1];
+  const mat = locatedMirroredInnerBridge.placement;
+  const hinge = findFlatPartIntersection(locatedMirroredInnerBridge, locatedOuterTunnel, false, true);
+
+  const onBridge = a2m(
+    hinge,
+    transformPoint3(mat, nz3, true),
+    transformPoint3(mat, x3, true)
+  )
+
+  const onScrew = a2m([0, openArea.z / 2, 0], x3, nz3);
+
+  const screwPlacement = onBridge.multiply(onScrew.inverse());
+  woodenBase.addChild(screwAssy, screwPlacement);
+}
 
 woodenBase.addChild(
   tunnel.mirror(),

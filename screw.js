@@ -1,18 +1,18 @@
 // @ts-check
 
-import { nz3, x3, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
-import { FlatPart } from "./cade/lib/flat.js";
+import { nx3, nz3, x3, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
+import { findFlatPartIntersection, FlatPart, projectPlane } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { blackMetalMaterial, metalMaterial } from "./cade/lib/materials.js";
 import { cut, extrusion, fuse, multiExtrusion } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
-import { minus, norm, placeAlong } from "./cade/tools/2d.js";
-import { proj2d } from "./cade/tools/3d.js";
+import { intersectLines, minus, norm, placeAlong } from "./cade/tools/2d.js";
+import { cross, dot3, mult3, plus3, proj2d } from "./cade/tools/3d.js";
 import { getCircleCenter, intersectLineAndArc } from "./cade/tools/circle.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
-import { yRailLength } from "./dimensions.js";
+import { openArea, yRailLength } from "./dimensions.js";
 import { m5Bolt, m5Nut, m5Washer } from "./fasteners.js";
 
 const bf12Thickness = 20;
