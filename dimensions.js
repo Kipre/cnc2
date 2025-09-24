@@ -16,4 +16,11 @@ export const openArea = {
   z: zAxisTravel,
 };
 
-const defaultSpindleSize = 6;
+export const defaultSpindleSize = 6;
+
+export const joinOffset = 10;
+export const joinWidth = 100 - 2 * woodThickness;
+export const joinSpace = 2 * joinOffset + woodThickness;
+
+export const bridgeTopThickness = zAxisTravel;
+export const bridgeTop = openArea.z + bridgeTopThickness;

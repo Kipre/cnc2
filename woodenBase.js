@@ -26,90 +26,18 @@ import {
   xRailSupportWidth,
   zAxisTravel,
   yRailEndSpace,
+  joinWidth,
+  bridgeTop,
+  joinOffset,
+  joinSpace,
 } from "./dimensions.js";
 import { fastenSubpartToFlatPart, yRail } from "./rails.js";
 import { screwAssy } from "./screw.js";
 import { minus3, mult3 } from "./cade/tools/3d.js";
-
-const bridgeTopThickness = zAxisTravel;
-const bridgeTop = openArea.z + bridgeTopThickness;
-const joinOffset = 10;
-const joinWidth = 100 - 2 * woodThickness;
-const tunnelHeight = openArea.z;
-const joinSpace = 2 * joinOffset + woodThickness;
-const spindleDiameter = 6;
-
-const halfBridgeMaker = (p, enlargement = 0) => {
-  p.moveTo([xRailSupportWidth + openArea.x / 2, openArea.z]);
-  p.lineTo([xRailSupportWidth - enlargement, openArea.z]);
-  spindleClearedLineTo(
-    p,
-    [xRailSupportWidth - enlargement, 0],
-    spindleDiameter / 2,
-    true,
-  );
-  p.lineTo([0, 0]);
-  p.lineTo([0, bridgeTop]);
-  p.lineTo([xRailSupportWidth + openArea.x / 2, bridgeTop]);
-  p.fillet(100);
-  p.close();
-  return p;
-};
-
-const innerBridgePath = halfBridgeMaker(new Path(), woodThickness);
-const innerBridge = new FlatPart(
-  "inner bridge",
-  woodThickness,
-  innerBridgePath,
-);
-
-const outerBridge = new FlatPart(
-  "outer bridge",
-  woodThickness,
-  halfBridgeMaker(new Path(), -joinOffset),
-);
-
-const halfTunnel = new Path();
-halfTunnel.moveTo([joinWidth + openArea.y / 2 + woodThickness, 0]);
-halfTunnel.lineTo([0, 0]);
-halfTunnel.lineTo([0, bridgeTop]);
-halfTunnel.lineTo([joinWidth, bridgeTop]);
-halfTunnel.lineTo([joinWidth, tunnelHeight]);
-spindleClearedLineTo(
-  halfTunnel,
-  [joinWidth + openArea.y / 2 + woodThickness, tunnelHeight],
-  spindleDiameter / 2,
-);
-halfTunnel.close();
-halfTunnel.translate([-woodThickness, 0]);
-
-const innerTunnel = new FlatPart("inner tunnel", woodThickness, halfTunnel);
-
-const fullWidth = joinWidth + openArea.y / 2 + 2 * woodThickness + joinOffset;
-
-let halfOuterTunnel = new Path();
-halfOuterTunnel.moveTo([0, 0]);
-halfOuterTunnel.lineTo([fullWidth, 0]);
-halfOuterTunnel.lineTo([fullWidth, bridgeTop - 100]);
-halfOuterTunnel.lineTo([openArea.y / 2 - joinOffset, bridgeTop - 100]);
-halfOuterTunnel.lineTo([openArea.y / 2 - joinOffset, tunnelHeight]);
-halfOuterTunnel.lineTo([0, tunnelHeight]);
-halfOuterTunnel.close();
-halfOuterTunnel = halfOuterTunnel
-  .scale(-1, 1)
-  .translate([fullWidth - woodThickness - joinOffset, 0]);
-
-const outerTunnel = new FlatPart(
-  "outer tunnel",
-  woodThickness,
-  halfOuterTunnel,
-);
+import {innerTunnel, outerTunnel, tunnel, tunnelHeight} from "./tunnel.js";
+import {bridge, innerBridge, outerBridge} from "./bridge.js";
 
 export const woodenBase = new Assembly("wooden frame");
-export const bridge = new Assembly("bridge");
-export const tunnel = new Assembly("tunnel");
-tunnel.addChild(innerTunnel);
-tunnel.addChild(outerTunnel, a2m([0, 0, -xRailSupportWidth]));
 
 const bridgePlacement = a2m([-xRailSupportWidth, -woodThickness, 0]);
 woodenBase.addChild(bridge, bridgePlacement);
@@ -128,8 +56,6 @@ const tunnelPlacement = a2m(
 );
 woodenBase.addChild(tunnel, tunnelPlacement);
 
-bridge.addChild(innerBridge, a2m([0, woodThickness, 0], ny3));
-bridge.addChild(outerBridge, a2m([0, -joinWidth, 0], ny3));
 
 const locatedInnerBridge = woodenBase.findChild(innerBridge);
 const locatedInnerTunnel = woodenBase.findChild(innerTunnel);
