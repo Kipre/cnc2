@@ -1,4 +1,3 @@
-
 // @ts-check
 
 import {
@@ -16,44 +15,73 @@ import {
   bridgeTop,
   defaultSpindleSize,
   joinOffset,
+  joinSpace,
+  tunnelOpeningHeight,
+  screwShaftZ,
+  tunnelHeight,
+  motorBodyLength,
+  roundingRadius,
 } from "./dimensions.js";
 
-export const tunnelHeight = openArea.z;
+const innerTunnelTop = bridgeTop - joinOffset - woodThickness;
 
-const halfTunnel = new Path();
-halfTunnel.moveTo([joinWidth + openArea.y / 2 + woodThickness, 0]);
-halfTunnel.lineTo([0, 0]);
-halfTunnel.lineTo([0, bridgeTop]);
-halfTunnel.lineTo([joinWidth, bridgeTop]);
-halfTunnel.lineTo([joinWidth, tunnelHeight]);
+const tunnelPath = new Path();
+tunnelPath.moveTo([joinWidth + openArea.y / 2 + woodThickness, 0]);
+tunnelPath.lineTo([0, 0]);
+tunnelPath.lineTo([0, innerTunnelTop]);
+tunnelPath.lineTo([joinWidth, innerTunnelTop]);
+tunnelPath.lineTo([joinWidth, tunnelHeight]);
 spindleClearedLineTo(
-  halfTunnel,
+  tunnelPath,
   [joinWidth + openArea.y / 2 + woodThickness, tunnelHeight],
   defaultSpindleSize / 2,
 );
-halfTunnel.close();
-halfTunnel.translate([-woodThickness, 0]);
+tunnelPath.mirror();
+tunnelPath.translate([-woodThickness, 0]);
 
-export const innerTunnel = new FlatPart("inner tunnel", woodThickness, halfTunnel);
+export const innerTunnel = new FlatPart("inner tunnel", woodThickness, tunnelPath);
 
 const fullWidth = joinWidth + openArea.y / 2 + 2 * woodThickness + joinOffset;
+const motorSpace = motorBodyLength - joinWidth - woodThickness + joinSpace;
+const braceRadius = roundingRadius + joinSpace;
+const outerHeightDiff = 100;
 
-let halfOuterTunnel = new Path();
-halfOuterTunnel.moveTo([0, 0]);
-halfOuterTunnel.lineTo([fullWidth, 0]);
-halfOuterTunnel.lineTo([fullWidth, bridgeTop - 100]);
-halfOuterTunnel.lineTo([openArea.y / 2 - joinOffset, bridgeTop - 100]);
-halfOuterTunnel.lineTo([openArea.y / 2 - joinOffset, tunnelHeight]);
-halfOuterTunnel.lineTo([0, tunnelHeight]);
-halfOuterTunnel.close();
-halfOuterTunnel = halfOuterTunnel
+let outerTunnelPath = new Path();
+outerTunnelPath.moveTo([0, 0]);
+outerTunnelPath.lineTo([fullWidth, 0]);
+outerTunnelPath.lineTo([fullWidth, bridgeTop - outerHeightDiff]);
+outerTunnelPath.lineTo([openArea.y / 2 - joinOffset, bridgeTop - outerHeightDiff]);
+outerTunnelPath.lineTo([openArea.y / 2 - joinOffset, tunnelHeight]);
+outerTunnelPath.lineTo([0, tunnelHeight]);
+outerTunnelPath.mirror();
+
+const motorContour = new Path();
+motorContour.moveTo([fullWidth, 0]);
+motorContour.lineTo([fullWidth + motorSpace, 0]);
+motorContour.arcTo([fullWidth + motorSpace, 2 * screwShaftZ], braceRadius);
+// halfOuterTunnel.arcTo([fullWidth, 2 * screwShaftZ], braceRadius);
+motorContour.arcTo([fullWidth, bridgeTop - outerHeightDiff], braceRadius);
+motorContour.close();
+
+outerTunnelPath = outerTunnelPath.booleanUnion(motorContour);
+
+outerTunnelPath = outerTunnelPath
   .scale(-1, 1)
   .translate([fullWidth - woodThickness - joinOffset, 0]);
 
 export const outerTunnel = new FlatPart(
   "outer tunnel",
   woodThickness,
-  halfOuterTunnel,
+  outerTunnelPath,
+);
+
+const slotExtension = 150;
+outerTunnel.addInsides(
+  Path.makeRoundedRect(
+    openArea.y + slotExtension + 50,
+    tunnelOpeningHeight,
+    roundingRadius,
+  ).translate([-slotExtension + joinWidth + joinSpace - joinOffset, joinSpace]),
 );
 
 export const tunnel = new Assembly("tunnel");

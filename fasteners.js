@@ -12,7 +12,6 @@ import { minus, placeAlong, rotatePoint } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m } from "./cade/tools/transform.js";
 
-const headThickness = 4.0; // mm
 const washerThickness = 1;
 
 const isoFastenerSizes = {
@@ -143,8 +142,8 @@ function makeWasher(size) {
   const washerShape = extrusion(
     a2m([0, 0, -washerThickness]),
     washerThickness,
-    Path.makeCircle(washerOuterDiameter / 2),
-    Path.makeCircle(washerInnerDiameter / 2).invert(),
+    Path.makeCircle(washerOuterDiameter / 2).invert(),
+    Path.makeCircle(washerInnerDiameter / 2),
   );
 
   const washer = new Part(`${size} washer`, washerShape);

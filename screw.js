@@ -12,7 +12,7 @@ import { getCircleCenter, intersectLineAndArc } from "./cade/tools/circle.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
-import { openArea, yRailLength } from "./dimensions.js";
+import { openArea, screwCenterToSupport, yRailLength } from "./dimensions.js";
 import { m5Bolt, m5Nut, m5Washer } from "./fasteners.js";
 
 const bf12Thickness = 20;
@@ -25,9 +25,11 @@ const holeOffset = 7;
 const bkTopHoleOffset = 13 / 2;
 const sideHoleDiameter = 5.5;
 const topHoleDiameter = 6.6;
-const shaftY = 18 + 7;
+const shaftY = 18 + holeOffset;
 const shaftHoleDiameter = 20;
 
+
+console.assert(shaftY === screwCenterToSupport);
 const shaftDiameter = 16;
 
 const shaftCenter = [0, shaftY];
@@ -104,6 +106,7 @@ export const bk12 = new Part(
 );
 bk12.material = blackMetalMaterial;
 
+
 function makeScrewAssembly(length) {
   const distance = length - 51;
   const endLength = 12;
@@ -130,3 +133,45 @@ function makeScrewAssembly(length) {
 }
 
 export const screwAssy = makeScrewAssembly(1000);
+export const screwShaftPlacement = a2m([1000, 0, shaftY]);
+
+const rollerLength = 40;
+const rollerThickness = 40;
+const rollerWidth = 52;
+const ballScrewPlateThickness = 10;
+const ballScrewPlateDiameter = 48;
+
+const rollerBbox = Path.makeRect(rollerWidth, rollerThickness).translate([-rollerWidth / 2, -rollerThickness / 2]);
+
+const rollerProfile = new Path();
+rollerProfile.moveTo([0, -rollerThickness / 2]);
+rollerProfile.lineTo([rollerWidth / 2, -rollerThickness / 2]);
+rollerProfile.lineTo([rollerWidth / 2, rollerThickness / 2]);
+rollerProfile.lineTo([0, rollerThickness / 2]);
+rollerProfile.fillet(16);
+rollerProfile.mirror();
+
+
+const rollerSolid = extrusion(
+  a2m(),
+  rollerLength,
+  rollerProfile,
+);
+
+const somewhatOval = Path.makeCircle(ballScrewPlateDiameter / 2)
+  .booleanIntersection(rollerBbox);
+
+const ballScrewPlate = extrusion(
+  a2m([0, 0, rollerLength]),
+  ballScrewPlateThickness,
+  somewhatOval,
+);
+
+const rollercenterHole = extrusion(
+  a2m([0, 0, -rollerLength / 2]),
+  rollerLength * 2,
+  Path.makeCircle(shaftHoleDiameter / 2).invert()
+);
+
+export const roller = new Part("roller", cut(fuse(rollerSolid, ballScrewPlate), rollercenterHole));
+roller.material = metalMaterial;
