@@ -175,7 +175,6 @@ for (const func of postMirror) {
   func();
 }
 
-// cloneAndMirrorChildren(woodenBase, m6Fastener, [0, 0, 1]);
 
 tunnel.addChild(
   yRail,
@@ -223,4 +222,5 @@ woodenBase.addChild(
   new DOMMatrix()
     .translate(openArea.x + 2 * woodThickness)
     .multiply(tunnelPlacement),
+  true,
 );
