@@ -41,12 +41,12 @@ import {
   screwShaftZ,
   bfkSupportExtension,
 } from "./dimensions.js";
-import { fastenSubpartToFlatPart, fastenSubpartToFlatPart1, yRail } from "./rails.js";
-import { bf12, bk12, bk12Thickness, makeBKPlateCutout, roller, screwAssy, screwShaftPlacement } from "./screw.js";
+import { fastenSubpartToFlatPart, yRail, yRailHoleFinder } from "./rails.js";
+import { bf12, bk12, bk12Thickness, bkfHoleFinder, makeBKPlateCutout, roller, screwAssy, screwShaftPlacement } from "./screw.js";
 import { minus3, mult3, norm3 } from "./cade/tools/3d.js";
 import { innerTunnel, outerTunnel, tunnel } from "./tunnel.js";
 import { bridge, innerBridge, outerBridge, secondBridge, secondInnerBridge, secondOuterBridge } from "./bridge.js";
-import { motorWithCoupler, nema23 } from "./motor.js";
+import { motorHolesGetter, motorWithCoupler, nema23 } from "./motor.js";
 import { debugGeometry } from "./cade/tools/svg.js";
 
 
@@ -188,7 +188,7 @@ tunnel.addChild(
 );
 
 
-fastenSubpartToFlatPart(tunnel, yRail, tunnelJoins[0]);
+fastenSubpartToFlatPart(tunnel, yRail, tunnelJoins[0], yRailHoleFinder);
 
 {
   const locatedMirroredInnerBridge = woodenBase.findChild(secondInnerBridge);
@@ -212,9 +212,11 @@ fastenSubpartToFlatPart(tunnel, yRail, tunnelJoins[0]);
     transformPoint3(shaftCenter, x3, true),
   );
   woodenBase.addChild(motorWithCoupler, coAxial);
+  fastenSubpartToFlatPart(woodenBase, nema23, innerBridge, motorHolesGetter);
+
   woodenBase.addChild(roller, coAxial.translate(0, 0, -500).rotate(0, 0, -90));
 
-  fastenSubpartToFlatPart1(woodenBase, bf12, secondInnerBridge);
+  fastenSubpartToFlatPart(woodenBase, bf12, secondInnerBridge, bkfHoleFinder);
 
   const location = woodenBase.findChild(bk12).placement
   const bkSupportPlacement = location.multiply(a2m([bk12Thickness / 2, 0, 0], x3));
@@ -228,7 +230,6 @@ fastenSubpartToFlatPart(tunnel, yRail, tunnelJoins[0]);
     woodenBase.findChild(tunnelJoins[1]),
   );
 
-
   const bkSupportTenon = makeTenon(motorSupportWidth, bfkSupportExtension, defaultSpindleSize, 3);
   bkSupportPath.insertFeature(bkSupportTenon, 2, { fromStart: screwShaftZ - joinOffset - woodThickness });
   const plateCutout = makeBKPlateCutout(defaultSpindleSize, 3);
@@ -238,8 +239,6 @@ fastenSubpartToFlatPart(tunnel, yRail, tunnelJoins[0]);
 
   tunnel.addChild(bkSupport, tunnelPlacement.inverse().multiply(bkSupportPlacement));
 
-
-
   joinParts(tunnel, bkSupport, innerTunnel, [
     new CylinderNutFastener(0.8),
     new TenonMortise(0.3),
@@ -248,7 +247,7 @@ fastenSubpartToFlatPart(tunnel, yRail, tunnelJoins[0]);
   joinParts(tunnel, bkSupport, tunnelJoins[1], [new CylinderNutFastener(0.7), new DrawerSlot(false)]);
   joinParts(tunnel, bkSupport, outerTunnel, [], [new CylinderNutFastener(0.2)]);
 
-  fastenSubpartToFlatPart1(woodenBase, bk12, bkSupport);
+  fastenSubpartToFlatPart(woodenBase, bk12, bkSupport, bkfHoleFinder);
 }
 
 woodenBase.addChild(

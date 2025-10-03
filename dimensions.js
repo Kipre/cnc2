@@ -20,6 +20,8 @@ export const openArea = {
 
 export const defaultSpindleSize = 6;
 
+export const mediumClearance = 2;
+
 export const joinOffset = 10;
 export const joinWidth = 100 - 2 * woodThickness;
 export const joinSpace = 2 * joinOffset + woodThickness;
@@ -36,6 +38,8 @@ export const motorBodyLength = 113.5;
 export const motorSide = 56;
 export const roundingRadius = 10;
 export const motorSupportPadding = (tunnelOpeningHeight - motorSide) / 2;
+
+export const motorCouplerDiameter = 25;
 
 export const screwSinking = -20;
 export const screwCenterToSupport = 18 + 7;

@@ -47,37 +47,40 @@ for (let x = 50; x < yRailLength; x += 100) {
   holePaths.push(circle.translate([x, -yRailWidth / 2 + 4]));
 }
 
-const holes = multiExtrusion(a2m([0, -5, 0], y3, z3), 20, ...holePaths);
+const holesTransform = a2m([0, -5, 0], y3, z3);
+const holes = multiExtrusion(holesTransform, 20, ...holePaths);
+
+export function* yRailHoleFinder() {
+  const length = holePaths.length;
+  for (let i = 0; i < length; i+= 3 * 2) {
+    yield {hole: holePaths[i], depth: 4, transform: holesTransform};
+    yield {hole: holePaths[i+1], depth: 4, transform: holesTransform};
+  }
+}
 
 /**
  * @param {Assembly} parent
  * @param {Part} subpart
  * @param {FlatPart} part
+ * @param {(part: Part) => Generator<{hole: Path, depth: number, transform: DOMMatrix}>} holeIterator
  */
-export function fastenSubpartToFlatPart1(parent, subpart, part) {
+export function fastenSubpartToFlatPart(parent, subpart, part, holeIterator) {
   const partPlacement = parent.findChild(part).placement;
   const subPlacement = parent.findChild(subpart).placement;
-
-  const holePaths = subpart.shape[0].insides.slice(1);
-  const holesTransform = subpart.shape[0].placement;
-  const holeDepth = subpart.shape[0].length;
-
-
-  const requiredClampingLength = holeDepth + part.thickness;
 
   const subToPart = partPlacement.inverse().multiply(subPlacement);
   const fastenToTheFront = transformPoint3(subToPart, zero3)[2] > part.thickness / 2;
 
-  const length = holePaths.length;
+  for (const { hole, depth, transform: holeTransform } of holeIterator(subpart)) {
 
-  for (let i = 0; i < length; i++) {
-    const hole = holePaths[i];
     const [, p1, , p2] = hole.getSegmentAt(1);
     const diameter = norm(p1, p2);
+
+    const requiredClampingLength = depth + part.thickness;
     const { bolt, nut, washer } = getFastenerKit(diameter, requiredClampingLength);
 
     const location = [...placeAlong(p1, p2, { fraction: 0.5 }), 0];
-    const holeToSubToPart = subToPart.multiply(holesTransform);
+    const holeToSubToPart = subToPart.multiply(holeTransform);
     const loc = proj2d(transformPoint3(holeToSubToPart, location));
 
     const locatedPath = Path.makeCircle(diameter / 2).translate(loc);
@@ -85,7 +88,7 @@ export function fastenSubpartToFlatPart1(parent, subpart, part) {
 
     const fastenerLocation = partPlacement.multiply(a2m([...loc, fastenToTheFront ? 0 : part.thickness], fastenToTheFront ? nz3 : z3));
     const topLocation = fastenerLocation.multiply(
-      a2m([0, 0, -holeDepth - part.thickness]),
+      a2m([0, 0, -depth - part.thickness]),
     );
 
     parent.addChild(bolt, topLocation);
@@ -96,50 +99,6 @@ export function fastenSubpartToFlatPart1(parent, subpart, part) {
 
     parent.addChild(washer, bottomLocation);
     parent.addChild(nut, bottomLocation);
-  }
-}
-
-/**
- * @param {Assembly} parent
- * @param {Part} subpart
- * @param {FlatPart} part
- */
-export function fastenSubpartToFlatPart(parent, subpart, part) {
-  const holeDepth = 4;
-  const partPlacement = parent.findChild(part).placement;
-  const subPlacement = parent.findChild(subpart).placement;
-
-  const subToPart = partPlacement.inverse().multiply(subPlacement);
-  const holesTransform = holes.retreive().shapes[0].retreive().placement;
-
-  const length = holePaths.length;
-  for (let i = 0; i < length / 2; i++) {
-    if (i % 3 !== 0) continue;
-    for (let j = 0; j < 2; j++) {
-      const hole = holePaths[2 * i + j];
-      const [, p1, , p2] = hole.getSegmentAt(1);
-      const diameter = norm(p1, p2);
-      const location = [...placeAlong(p1, p2, { fraction: 0.5 }), 0];
-      const holeToSubToPart = subToPart.multiply(holesTransform);
-      const loc = proj2d(transformPoint3(holeToSubToPart, location));
-
-      const locatedPath = Path.makeCircle(diameter / 2).translate(loc);
-      part.addInsides(locatedPath);
-
-      const fastenerLocation = partPlacement.multiply(a2m([...loc, 0], nz3));
-      const topLocation = fastenerLocation.multiply(
-        a2m([0, 0, -holeDepth - part.thickness]),
-      );
-
-      parent.addChild(m5Bolt, topLocation);
-      parent.addChild(m5Washer, topLocation);
-
-      const bottomLocation = fastenerLocation
-        .multiply(a2m(zero3, nz3));
-
-      parent.addChild(m5Washer, bottomLocation);
-      parent.addChild(m5Nut, bottomLocation);
-    }
   }
 }
 

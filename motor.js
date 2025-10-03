@@ -7,7 +7,7 @@ import { cut, extrusion, fuse, multiExtrusion } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
-import { motorBodyLength, motorSide } from "./dimensions.js";
+import { motorBodyLength, motorCouplerDiameter, motorSide } from "./dimensions.js";
 
 const side = motorSide;
 const angleInset = 9;
@@ -19,7 +19,7 @@ const centeringCylinderDiameter = 38.1;
 const shaftDiameter = 8;
 const shaftLength = 21;
 
-const couplerDiameter = 25;
+const couplerDiameter = motorCouplerDiameter;
 const couplerLength = 30;
 const couplerOutputDiameter = 10;
 const couplerInputDiameter = shaftDiameter;
@@ -63,6 +63,12 @@ for (const xSign of [1, -1]) {
 }
 
 const holes = multiExtrusion(a2m([0, 0, -plateThickness / 2]), plateThickness * 2, ...holePaths);
+
+export function * motorHolesGetter() {
+  for (const path of holePaths) {
+    yield {hole: path, depth: plateThickness, transform: a2m()}; 
+  }
+}
 
 export const nema23 = new Part("nema23", cut(fuse(body, plate, centeringCylinder, shaft), holes));
 nema23.material = blackMetalMaterial;

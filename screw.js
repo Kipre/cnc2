@@ -112,10 +112,18 @@ export function makeBKPlateCutout(spindleDiameter, radius) {
   const p = new Path();
   p.moveTo([-2 * radius - plateSide / 2 - cutoutMargin, 0]);
   p.lineTo([-plateSide / 2 - cutoutMargin, 0]);
-  p.arcTo([-plateSide / 2 - cutoutMargin, -depth -cutoutMargin], radius);
-  spindleCleared2LineTo(p, [0, -depth -cutoutMargin], spindleDiameter / 2);
+  p.arcTo([-plateSide / 2 - cutoutMargin, -depth - cutoutMargin], radius);
+  spindleCleared2LineTo(p, [0, -depth - cutoutMargin], spindleDiameter / 2);
   p.mirror(zero2, y2);
   return p;
+}
+
+export function* bkfHoleFinder(part) {
+  const transform = part.shape[0].placement;
+  const depth = part.shape[0].length;
+  for (const path of part.shape[0].insides.slice(1)) {
+    yield {hole: path, depth, transform};
+  }
 }
 
 
