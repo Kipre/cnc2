@@ -25,6 +25,7 @@ import {
   roundingRadius,
   screwShaftZ,
   motorSpaceDepth,
+  bfkSupportExtension,
 } from "./dimensions.js";
 
 
@@ -77,7 +78,7 @@ const [idx] = innerBridge.outside.findSegmentsOnLine(zero2, y2);
 const motorSupport = makeTenon(motorSupportWidth, motorSupportHeight, defaultSpindleSize, roundingRadius);
 innerBridge.outside.insertFeature(motorSupport, idx, { fromStart: screwShaftZ });
 
-const bf12Support = makeTenon(motorSupportWidth, woodThickness-1, defaultSpindleSize, 3);
+const bf12Support = makeTenon(motorSupportWidth, bfkSupportExtension, defaultSpindleSize, 3);
 secondInnerBridge.outside.insertFeature(bf12Support, idx, { fromStart: screwShaftZ });
 
 const [idx2] = outerBridge.outside.findSegmentsOnLine(zero2, y2);

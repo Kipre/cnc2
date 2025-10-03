@@ -40,5 +40,8 @@ export const motorSupportPadding = (tunnelOpeningHeight - motorSide) / 2;
 export const screwSinking = -20;
 export const screwCenterToSupport = 18 + 7;
 export const motorSupportWidth = motorSide + 2 * motorSupportPadding;
-export const motorSupportHeight = screwSinking + screwCenterToSupport + motorSupportWidth / 2;
-export const motorSpaceDepth = screwSinking + screwCenterToSupport - motorSupportWidth / 2;
+export const screwCenter = screwSinking + screwCenterToSupport;
+export const motorSupportHeight = screwCenter + motorSupportWidth / 2;
+export const motorSpaceDepth = screwCenter - motorSupportWidth / 2;
+
+export const bfkSupportExtension = woodThickness - 1;

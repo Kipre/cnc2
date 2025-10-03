@@ -7,7 +7,7 @@ import { metalMaterial } from "./cade/lib/materials.js";
 import { cut, extrusion, fuse, multiExtrusion } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
 import { norm, placeAlong } from "./cade/tools/2d.js";
-import { proj2d } from "./cade/tools/3d.js";
+import { plus3, proj2d } from "./cade/tools/3d.js";
 import { getCircleCenter, intersectLineAndArc } from "./cade/tools/circle.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
@@ -62,9 +62,11 @@ export function fastenSubpartToFlatPart1(parent, subpart, part) {
   const holesTransform = subpart.shape[0].placement;
   const holeDepth = subpart.shape[0].length;
 
+
   const requiredClampingLength = holeDepth + part.thickness;
 
   const subToPart = partPlacement.inverse().multiply(subPlacement);
+  const fastenToTheFront = transformPoint3(subToPart, zero3)[2] > part.thickness / 2;
 
   const length = holePaths.length;
 
@@ -81,7 +83,7 @@ export function fastenSubpartToFlatPart1(parent, subpart, part) {
     const locatedPath = Path.makeCircle(diameter / 2).translate(loc);
     part.addInsides(locatedPath);
 
-    const fastenerLocation = partPlacement.multiply(a2m([...loc, 0], nz3));
+    const fastenerLocation = partPlacement.multiply(a2m([...loc, fastenToTheFront ? 0 : part.thickness], fastenToTheFront ? nz3 : z3));
     const topLocation = fastenerLocation.multiply(
       a2m([0, 0, -holeDepth - part.thickness]),
     );

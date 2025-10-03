@@ -1,7 +1,7 @@
 // @ts-check
 
-import { nx3, nz3, x3, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
-import { findFlatPartIntersection, FlatPart, projectPlane } from "./cade/lib/flat.js";
+import { nx3, nz3, x3, y2, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
+import { findFlatPartIntersection, FlatPart, projectPlane, spindleCleared2LineTo } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { blackMetalMaterial, metalMaterial } from "./cade/lib/materials.js";
 import { cut, extrusion, fuse, multiExtrusion } from "./cade/lib/operations.js";
@@ -12,11 +12,11 @@ import { getCircleCenter, intersectLineAndArc } from "./cade/tools/circle.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
-import { openArea, screwCenterToSupport, yRailLength } from "./dimensions.js";
+import { bfkSupportExtension, openArea, screwCenter, screwCenterToSupport, yRailLength } from "./dimensions.js";
 import { m5Bolt, m5Nut, m5Washer } from "./fasteners.js";
 
 const bf12Thickness = 20;
-const bk12Thickness = 25;
+export const bk12Thickness = 25;
 const supportHeight = 43;
 const supportWidth = 60;
 const indentDepth = 10.5;
@@ -90,7 +90,7 @@ const bkPlate = extrusion(
   5,
   Path.makeRect(plateSide).translate(
     minus(shaftCenter, [plateSide / 2, plateSide / 2]),
-  ),
+  ).invert(),
   shaftHole.invert(),
 );
 
@@ -105,6 +105,18 @@ export const bk12 = new Part(
   fuse(cut(makeBody(bk12Thickness), bkTopHoles), bkPlate),
 );
 bk12.material = blackMetalMaterial;
+
+const cutoutMargin = 1;
+export function makeBKPlateCutout(spindleDiameter, radius) {
+  const depth = bfkSupportExtension - screwCenter + plateSide / 2;
+  const p = new Path();
+  p.moveTo([-2 * radius - plateSide / 2 - cutoutMargin, 0]);
+  p.lineTo([-plateSide / 2 - cutoutMargin, 0]);
+  p.arcTo([-plateSide / 2 - cutoutMargin, -depth -cutoutMargin], radius);
+  spindleCleared2LineTo(p, [0, -depth -cutoutMargin], spindleDiameter / 2);
+  p.mirror(zero2, y2);
+  return p;
+}
 
 
 function makeScrewAssembly(length) {
