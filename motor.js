@@ -7,7 +7,7 @@ import { cut, extrusion, fuse, multiExtrusion } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
-import { motorBodyLength, motorCouplerDiameter, motorSide } from "./dimensions.js";
+import { motorBodyLength, motorCenteringCylinderDiameter, motorCouplerDiameter, motorSide } from "./dimensions.js";
 
 const side = motorSide;
 const angleInset = 9;
@@ -15,7 +15,6 @@ const plateThickness = 5;
 const bodyLength = motorBodyLength - plateThickness;
 const interHoles = 47.14;
 const centeringCylinderThickness = 1.6;
-const centeringCylinderDiameter = 38.1;
 const shaftDiameter = 8;
 const shaftLength = 21;
 
@@ -42,7 +41,7 @@ const plate = extrusion(a2m(), plateThickness, Path.makeRoundedRect(side, side, 
 const centeringCylinder = extrusion(
   a2m(zero3, nz3),
   centeringCylinderThickness,
-  Path.makeCircle(centeringCylinderDiameter / 2)
+  Path.makeCircle(motorCenteringCylinderDiameter / 2)
 );
 
 const shaft = extrusion(

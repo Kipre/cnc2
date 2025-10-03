@@ -40,6 +40,7 @@ export const roundingRadius = 10;
 export const motorSupportPadding = (tunnelOpeningHeight - motorSide) / 2;
 
 export const motorCouplerDiameter = 25;
+export const motorCenteringCylinderDiameter = 38.1;
 
 export const screwSinking = -20;
 export const screwCenterToSupport = 18 + 7;

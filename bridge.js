@@ -28,6 +28,7 @@ import {
   bfkSupportExtension,
   mediumClearance,
   motorCouplerDiameter,
+  motorCenteringCylinderDiameter,
 } from "./dimensions.js";
 
 
@@ -80,7 +81,7 @@ const [idx] = innerBridge.outside.findSegmentsOnLine(zero2, y2);
 const motorSupport = makeTenon(motorSupportWidth, motorSupportHeight, defaultSpindleSize, roundingRadius);
 innerBridge.outside.insertFeature(motorSupport, idx, { fromStart: screwShaftZ });
 
-innerBridge.addInsides(Path.makeCircle(motorCouplerDiameter / 2 + mediumClearance).translate([motorSupportWidth / 2 - motorSupportHeight, screwShaftZ]));
+innerBridge.addInsides(Path.makeCircle(motorCenteringCylinderDiameter / 2).translate([motorSupportWidth / 2 - motorSupportHeight, screwShaftZ]));
 
 const bf12Support = makeTenon(motorSupportWidth, bfkSupportExtension, defaultSpindleSize, 3);
 secondInnerBridge.outside.insertFeature(bf12Support, idx, { fromStart: screwShaftZ });
@@ -94,6 +95,14 @@ motorClearance.arcTo([0, motorSpaceDepth], roundingRadius);
 motorClearance.mirror(zero2, y2);
 
 outerBridge.outside.insertFeature(motorClearance, idx2, { fromStart: screwShaftZ });
+
+
+const serviceHoleDiameter = 60;
+const serviceAccess = new Path();
+serviceAccess.moveTo([-serviceHoleDiameter / 2, 0]);
+serviceAccess.arc([serviceHoleDiameter / 2, 0], serviceHoleDiameter / 2, 1);
+const [idx3] = secondOuterBridge.outside.findSegmentsOnLine(zero2, y2);
+secondOuterBridge.outside.insertFeature(serviceAccess, idx3, { fromStart: screwShaftZ });
 
 
 const closer = a2m([0, woodThickness, 0], ny3);

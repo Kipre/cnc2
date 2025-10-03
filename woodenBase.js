@@ -85,17 +85,19 @@ const layout2 = [
 
 const joins = [];
 
+const nutAndSlot = [new CylinderNutFastener(0.65), new TenonMortise(0.3)];
+
 joinParts(woodenBase, innerBridge, innerTunnel, layout);
 joinParts(woodenBase, innerTunnel, innerBridge, [new CylinderNutFastener(0.3)]);
 joinParts(woodenBase, innerTunnel, outerBridge, layout2);
 joinParts(woodenBase, innerBridge, outerTunnel, centeredBolt, centeredBolt);
-joinParts(woodenBase, outerBridge, outerTunnel, centeredBolt, centeredBolt);
+joinParts(woodenBase, outerBridge, outerTunnel, centeredBolt, nutAndSlot);
 
 joinParts(woodenBase, secondInnerBridge, innerTunnel, layout);
 joinParts(woodenBase, innerTunnel, secondInnerBridge, [new CylinderNutFastener(0.3)]);
 joinParts(woodenBase, innerTunnel, secondOuterBridge, layout2);
 joinParts(woodenBase, secondInnerBridge, outerTunnel, centeredBolt, centeredBolt);
-joinParts(woodenBase, secondOuterBridge, outerTunnel, layout);
+joinParts(woodenBase, secondOuterBridge, outerTunnel, centeredBolt, nutAndSlot);
 
 const center = openArea.x / 2 + xRailSupportWidth;
 
