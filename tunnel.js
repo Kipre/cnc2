@@ -1,10 +1,12 @@
 // @ts-check
 
+import { z3, zero3 } from "./cade/lib/defaults.js";
 import {
   FlatPart,
   spindleClearedLineTo,
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
+import { norm3 } from "./cade/tools/3d.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import {
@@ -51,8 +53,8 @@ outerTunnelPath.moveTo([0, 0]);
 outerTunnelPath.lineTo([fullWidth, 0]);
 outerTunnelPath.lineTo([fullWidth, bridgeTop - outerHeightDiff]);
 outerTunnelPath.lineTo([openArea.y / 2 - joinOffset, bridgeTop - outerHeightDiff]);
-outerTunnelPath.lineTo([openArea.y / 2 - joinOffset, tunnelHeight]);
-outerTunnelPath.lineTo([0, tunnelHeight]);
+outerTunnelPath.lineTo([openArea.y / 2 - joinOffset, tunnelHeight + 10]);
+outerTunnelPath.lineTo([0, tunnelHeight + 10]);
 outerTunnelPath.mirror();
 
 const motorContour = new Path();

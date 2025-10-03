@@ -23,6 +23,7 @@ const isoFastenerSizes = {
     nutThickness: 2.4,
     washerOuterDiameter: 7,
     washerInnerDiameter: 3.2,
+    lengths: [5, 6, 8, 10, 12, 16, 20, 25, 30, 35, 40, 50],
   },
   M4: {
     headSize: 7,
@@ -32,6 +33,7 @@ const isoFastenerSizes = {
     nutThickness: 3.2,
     washerOuterDiameter: 9,
     washerInnerDiameter: 4.3,
+    lengths: [6, 8, 10, 12, 14, 16, 18, 20, 25, 30, 35, 40, 45, 50, 55, 60],
   },
   M5: {
     headSize: 8,
@@ -41,6 +43,7 @@ const isoFastenerSizes = {
     nutThickness: 4,
     washerOuterDiameter: 10,
     washerInnerDiameter: 5.3,
+    lengths: [6, 8, 10, 12, 14, 16, 18, 20, 22, 25, 30, 35, 40, 45, 50, 55, 60, 70, 100],
   },
   M6: {
     headSize: 10,
@@ -50,6 +53,7 @@ const isoFastenerSizes = {
     nutThickness: 5,
     washerOuterDiameter: 12,
     washerInnerDiameter: 6.4,
+    lengths: [8, 10, 12, 14, 16, 18, 20, 22, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 90, 100, 110, 130, 150],
   },
   M8: {
     headSize: 13,
@@ -59,6 +63,7 @@ const isoFastenerSizes = {
     nutThickness: 6.5,
     washerOuterDiameter: 16,
     washerInnerDiameter: 8.4,
+    lengths: [8, 10, 12, 14, 16, 18, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 90, 100, 110, 120, 140, 150, 180],
   },
 };
 
@@ -85,7 +90,7 @@ function makeBolt(size, length) {
     Path.makeCircle(diameter / 2),
   );
 
-  const bolt = new Part(`${size} bolt`, fuse(head, shank));
+  const bolt = new Part(`${size} bolt ${length}`, fuse(head, shank));
   bolt.material = metalMaterial;
   bolt.symmetries = [0, 0, NaN];
   return bolt;
@@ -152,13 +157,42 @@ function makeWasher(size) {
   return washer;
 }
 
-export const m6Washer = makeWasher("M6");
-export const m5Washer = makeWasher("M5");
+const bolts = {};
+const rest = {};
 
-export const m6Bolt = makeBolt("M6", 35);
-export const m5Bolt = makeBolt("M5", 30);
+export function getFastenerKit(size, length) {
+  let mSize = "M3";
+  if (size > 4) mSize = "M4";
+  if (size > 5) mSize = "M5";
+  if (size > 6) mSize = "M6";
+  if (size > 8) mSize = "M8";
+  if (size > 9 || size < 3) throw new Error("we don't have bolts this size yet");
 
-export const m5Nut = makeNut("M5");
+  const iso = isoFastenerSizes[mSize];
+  const requiredLength = length + 2 + iso.nutThickness + 3;
+  const availableLength = iso.lengths.find(x => x >= requiredLength);
+  const key = `${mSize}_${availableLength}`;
+
+  let bolt = bolts[key];
+  if (bolt == null) {
+    bolt = makeBolt(mSize, availableLength);
+    bolts[key] = bolt;
+  }
+
+  if (!(mSize in rest)) {
+    const nut = makeNut(mSize);
+    const washer = makeWasher(mSize);
+    rest[mSize] = { nut, washer };
+  }
+
+  return { ...rest[mSize], bolt };
+}
+
+export const {washer: m5Washer, nut: m5Nut, bolt: m5Bolt} = getFastenerKit(5.3, 22);
+export const {washer: m6Washer, nut: m6Nut, bolt: m6Bolt} = getFastenerKit(6.3, 26);
+
+// export const m6Washer = makeWasher("M6");
+// export const m6Bolt = makeBolt("M6", 35);
 
 export const m6Fastener = new Assembly("fastener");
 m6Fastener.addChild(m6Bolt);

@@ -40,22 +40,18 @@ import {
   defaultSpindleSize,
   screwShaftZ,
 } from "./dimensions.js";
-import { fastenSubpartToFlatPart, yRail } from "./rails.js";
-import { roller, screwAssy, screwShaftPlacement } from "./screw.js";
-import { minus3, mult3 } from "./cade/tools/3d.js";
+import { fastenSubpartToFlatPart, fastenSubpartToFlatPart1, yRail } from "./rails.js";
+import { bf12, bk12, roller, screwAssy, screwShaftPlacement } from "./screw.js";
+import { minus3, mult3, norm3 } from "./cade/tools/3d.js";
 import { innerTunnel, outerTunnel, tunnel } from "./tunnel.js";
 import { bridge, innerBridge, outerBridge, secondBridge, secondInnerBridge, secondOuterBridge } from "./bridge.js";
 import { motorWithCoupler, nema23 } from "./motor.js";
+
 
 export const woodenBase = new Assembly("wooden frame");
 
 const bridgePlacement = a2m([-xRailSupportWidth, -woodThickness, 0]);
 woodenBase.addChild(bridge, bridgePlacement);
-
-const mirror = new DOMMatrix()
-  .translate(openArea.x / 2, openArea.y / 2)
-  .rotate(0, 0, 180)
-  .translate(-openArea.x / 2, -openArea.y / 2);
 
 const secondBridgePlacement = a2m([-xRailSupportWidth, joinWidth + openArea.y + woodThickness, 0]);
 woodenBase.addChild(secondBridge, secondBridgePlacement);
@@ -215,6 +211,28 @@ fastenSubpartToFlatPart(tunnel, yRail, tunnelJoins[0]);
   );
   woodenBase.addChild(motorWithCoupler, coAxial);
   woodenBase.addChild(roller, coAxial.translate(0, 0, -500).rotate(0, 0, -90));
+
+  fastenSubpartToFlatPart1(woodenBase, bf12, secondInnerBridge);
+
+  const location = woodenBase.findChild(bk12).placement
+  const bkSupportPlacement = location.multiply(a2m([0, 0, 0], x3));
+
+  const bkSupportPath = makeShelfOnPlane(
+    bkSupportPlacement,
+    woodThickness,
+    locatedInnerTunnel,
+    woodenBase.findChild(tunnelJoins[0]),
+    locatedOuterTunnel,
+    woodenBase.findChild(tunnelJoins[1]),
+  );
+  const bkSupport = new FlatPart(`bkSupport`, woodThickness, bkSupportPath)
+
+  tunnel.addChild(bkSupport, tunnelPlacement.inverse().multiply(bkSupportPlacement));
+
+  // joinParts(woodenBase, bkSupport, innerBridge, centeredBolt);
+  // joinParts(woodenBase, bkSupport, secondInnerBridge, centeredBolt);
+  // joinParts(tunnel, bkSupport, innerTunnel, defaultSlotLayout);
+  // joinParts(tunnel, bkSupport, outerTunnel, defaultSlotLayout);
 }
 
 woodenBase.addChild(

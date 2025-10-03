@@ -13,7 +13,7 @@ import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import { yRailLength } from "./dimensions.js";
-import { m5Bolt, m5Nut, m5Washer } from "./fasteners.js";
+import { getFastenerKit, m5Bolt, m5Nut, m5Washer } from "./fasteners.js";
 
 const yRailWidth = 30;
 const yRailHeight = 29;
@@ -48,6 +48,54 @@ for (let x = 50; x < yRailLength; x += 100) {
 }
 
 const holes = multiExtrusion(a2m([0, -5, 0], y3, z3), 20, ...holePaths);
+
+/**
+ * @param {Assembly} parent
+ * @param {Part} subpart
+ * @param {FlatPart} part
+ */
+export function fastenSubpartToFlatPart1(parent, subpart, part) {
+  const partPlacement = parent.findChild(part).placement;
+  const subPlacement = parent.findChild(subpart).placement;
+
+  const holePaths = subpart.shape[0].insides.slice(1);
+  const holesTransform = subpart.shape[0].placement;
+  const holeDepth = subpart.shape[0].length;
+
+  const requiredClampingLength = holeDepth + part.thickness;
+
+  const subToPart = partPlacement.inverse().multiply(subPlacement);
+
+  const length = holePaths.length;
+
+  for (let i = 0; i < length; i++) {
+    const hole = holePaths[i];
+    const [, p1, , p2] = hole.getSegmentAt(1);
+    const diameter = norm(p1, p2);
+    const { bolt, nut, washer } = getFastenerKit(diameter, requiredClampingLength);
+
+    const location = [...placeAlong(p1, p2, { fraction: 0.5 }), 0];
+    const holeToSubToPart = subToPart.multiply(holesTransform);
+    const loc = proj2d(transformPoint3(holeToSubToPart, location));
+
+    const locatedPath = Path.makeCircle(diameter / 2).translate(loc);
+    part.addInsides(locatedPath);
+
+    const fastenerLocation = partPlacement.multiply(a2m([...loc, 0], nz3));
+    const topLocation = fastenerLocation.multiply(
+      a2m([0, 0, -holeDepth - part.thickness]),
+    );
+
+    parent.addChild(bolt, topLocation);
+    parent.addChild(washer, topLocation);
+
+    const bottomLocation = fastenerLocation
+      .multiply(a2m(zero3, nz3));
+
+    parent.addChild(washer, bottomLocation);
+    parent.addChild(nut, bottomLocation);
+  }
+}
 
 /**
  * @param {Assembly} parent

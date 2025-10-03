@@ -19,8 +19,10 @@
         background: #1a1a1a;
         color: white;
       }
-      body: {
+      #display {
         position: relative;
+        width: 100%;
+        height: 100%;
       }
       canvas {
         position: absolute;
@@ -47,7 +49,9 @@
     <script type="module">
       import "./main.js";
     </script>
-    <canvas id="canvas" ></canvas>
-    <div id="hidden-items"></div>
+    <div id="display">
+      <canvas id="canvas" ></canvas>
+      <div id="hidden-items"></div>
+    </div>
   </body>
 </html>
