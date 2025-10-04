@@ -52,9 +52,9 @@ const holes = multiExtrusion(holesTransform, 20, ...holePaths);
 
 export function* yRailHoleFinder() {
   const length = holePaths.length;
-  for (let i = 0; i < length; i+= 3 * 2) {
-    yield {hole: holePaths[i], depth: 4, transform: holesTransform};
-    yield {hole: holePaths[i+1], depth: 4, transform: holesTransform};
+  for (let i = 0; i < length; i += 3 * 2) {
+    yield { hole: holePaths[i], depth: 4, transform: holesTransform };
+    yield { hole: holePaths[i + 1], depth: 4, transform: holesTransform };
   }
 }
 
@@ -91,14 +91,13 @@ export function fastenSubpartToFlatPart(parent, subpart, part, holeIterator) {
       a2m([0, 0, -depth - part.thickness]),
     );
 
-    parent.addChild(bolt, topLocation);
-    parent.addChild(washer, topLocation);
-
     const bottomLocation = fastenerLocation
       .multiply(a2m(zero3, nz3));
 
-    parent.addChild(washer, bottomLocation);
-    parent.addChild(nut, bottomLocation);
+    subpart.pairings.push({ ...parent.addChild(bolt, topLocation), parent });
+    subpart.pairings.push({ ...parent.addChild(washer, topLocation), parent });
+    subpart.pairings.push({ ...parent.addChild(washer, bottomLocation), parent });
+    subpart.pairings.push({ ...parent.addChild(nut, bottomLocation), parent });
   }
 }
 

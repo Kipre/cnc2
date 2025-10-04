@@ -97,3 +97,4 @@ coupler.material = metalMaterial;
 export const motorWithCoupler = new Assembly("motor with coupler");
 motorWithCoupler.addChild(coupler, a2m([0, 0, -couplingDepth]));
 motorWithCoupler.addChild(nema23, a2m([0, 0, couplerLength - 2 * couplingDepth + shaftLength]));
+motorWithCoupler.symmetries = [0, 0, NaN];

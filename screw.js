@@ -99,12 +99,14 @@ export const bf12 = new Part(
   cut(makeBody(bf12Thickness), bfTopHoles),
 );
 bf12.material = blackMetalMaterial;
+bf12.symmetries = [NaN, 0, NaN];
 
 export const bk12 = new Part(
   "bk12 support",
   fuse(cut(makeBody(bk12Thickness), bkTopHoles), bkPlate),
 );
 bk12.material = blackMetalMaterial;
+bk12.symmetries = [NaN, 0, NaN];
 
 const cutoutMargin = 1;
 export function makeBKPlateCutout(spindleDiameter, radius) {
@@ -122,7 +124,7 @@ export function* bkfHoleFinder(part) {
   const transform = part.shape[0].placement;
   const depth = part.shape[0].length;
   for (const path of part.shape[0].insides.slice(1)) {
-    yield {hole: path, depth, transform};
+    yield { hole: path, depth, transform };
   }
 }
 
@@ -143,6 +145,7 @@ function makeScrewAssembly(length) {
     Path.makeCircle(endDiameter / 2).translate(shaftCenter),
   );
   const screw = new Part("screw", fuse(shaftBody, endBody));
+  screw.symmetries = [NaN, 0, shaftY];
   screw.material = metalMaterial;
 
   const result = new Assembly(`screw assy (${length})`);
