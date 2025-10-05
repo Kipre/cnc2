@@ -1,7 +1,22 @@
 // @ts-check
 
-import { nx3, nz3, x3, y2, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
-import { findFlatPartIntersection, FlatPart, projectPlane, spindleCleared2LineTo } from "./cade/lib/flat.js";
+import {
+  nx3,
+  ny3,
+  nz3,
+  x3,
+  y2,
+  y3,
+  z3,
+  zero2,
+  zero3,
+} from "./cade/lib/defaults.js";
+import {
+  findFlatPartIntersection,
+  FlatPart,
+  projectPlane,
+  spindleCleared2LineTo,
+} from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { blackMetalMaterial, metalMaterial } from "./cade/lib/materials.js";
 import { cut, extrusion, fuse, multiExtrusion } from "./cade/lib/operations.js";
@@ -12,7 +27,13 @@ import { getCircleCenter, intersectLineAndArc } from "./cade/tools/circle.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
-import { bfkSupportExtension, openArea, screwCenter, screwCenterToSupport, yRailLength } from "./dimensions.js";
+import {
+  bfkSupportExtension,
+  openArea,
+  screwCenter,
+  screwCenterToSupport,
+  yRailLength,
+} from "./dimensions.js";
 import { m5Bolt, m5Nut, m5Washer } from "./fasteners.js";
 
 const bf12Thickness = 20;
@@ -27,7 +48,6 @@ const sideHoleDiameter = 5.5;
 const topHoleDiameter = 6.6;
 const shaftY = 18 + holeOffset;
 const shaftHoleDiameter = 20;
-
 
 console.assert(shaftY === screwCenterToSupport);
 const shaftDiameter = 16;
@@ -88,9 +108,9 @@ const plateSide = supportWidth - 2 * indentWidth - 1;
 const bkPlate = extrusion(
   a2m([bk12Thickness / 2, 0, 0], x3),
   5,
-  Path.makeRect(plateSide).translate(
-    minus(shaftCenter, [plateSide / 2, plateSide / 2]),
-  ).invert(),
+  Path.makeRect(plateSide)
+    .translate(minus(shaftCenter, [plateSide / 2, plateSide / 2]))
+    .invert(),
   shaftHole.invert(),
 );
 
@@ -128,7 +148,6 @@ export function* bkfHoleFinder(part) {
   }
 }
 
-
 function makeScrewAssembly(length) {
   const distance = length - 51;
   const endLength = 12;
@@ -161,10 +180,20 @@ export const screwShaftPlacement = a2m([1000, 0, shaftY]);
 const rollerLength = 40;
 const rollerThickness = 40;
 const rollerWidth = 52;
+
+// TODO: check this
+const rollerThreadXDistance = 40;
+const rollerThreadYDistance = 24;
+const rollerThreadSize = 5;
+const rollerThreadDepth = 10;
+
 const ballScrewPlateThickness = 10;
 const ballScrewPlateDiameter = 48;
 
-const rollerBbox = Path.makeRect(rollerWidth, rollerThickness).translate([-rollerWidth / 2, -rollerThickness / 2]);
+const rollerBbox = Path.makeRect(rollerWidth, rollerThickness).translate([
+  -rollerWidth / 2,
+  -rollerThickness / 2,
+]);
 
 const rollerProfile = new Path();
 rollerProfile.moveTo([0, -rollerThickness / 2]);
@@ -174,15 +203,31 @@ rollerProfile.lineTo([0, rollerThickness / 2]);
 rollerProfile.fillet(16);
 rollerProfile.mirror();
 
+const rollerSolid = extrusion(a2m(), rollerLength, rollerProfile);
 
-const rollerSolid = extrusion(
-  a2m(),
-  rollerLength,
-  rollerProfile,
+const somewhatOval = Path.makeCircle(
+  ballScrewPlateDiameter / 2,
+).booleanIntersection(rollerBbox);
+
+const rollerThreads = [];
+const threadHole = Path.makeCircle(rollerThreadSize / 2);
+
+for (const xSign of [1, -1]) {
+  for (const ySign of [1, -1]) {
+    rollerThreads.push(
+      threadHole.translate([
+        (xSign * rollerThreadXDistance) / 2,
+        (ySign * rollerThreadYDistance) / 2,
+      ]),
+    );
+  }
+}
+
+const rollerHoles = multiExtrusion(
+  a2m([0, -rollerThreadDepth, rollerLength / 2], ny3),
+  2 * rollerThreadDepth,
+  ...rollerThreads,
 );
-
-const somewhatOval = Path.makeCircle(ballScrewPlateDiameter / 2)
-  .booleanIntersection(rollerBbox);
 
 const ballScrewPlate = extrusion(
   a2m([0, 0, rollerLength]),
@@ -193,8 +238,11 @@ const ballScrewPlate = extrusion(
 const rollercenterHole = extrusion(
   a2m([0, 0, -rollerLength / 2]),
   rollerLength * 2,
-  Path.makeCircle(shaftHoleDiameter / 2).invert()
+  Path.makeCircle(shaftHoleDiameter / 2).invert(),
 );
 
-export const roller = new Part("roller", cut(fuse(rollerSolid, ballScrewPlate), rollercenterHole));
+export const roller = new Part(
+  "roller",
+  cut(fuse(cut(rollerSolid, rollerHoles), ballScrewPlate), rollercenterHole),
+);
 roller.material = metalMaterial;

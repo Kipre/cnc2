@@ -194,7 +194,6 @@ let screwPlacement;
   const coAxial = screwPlacement.multiply(onShaft);
 
   fastenSubpartToFlatPart(woodenBase, nema23, innerBridge, motorHolesGetter);
-  console.log(nema23.pairings);
 
   woodenBase.addChild(roller, coAxial.translate(0, 0, -500).rotate(0, 0, 180));
 
