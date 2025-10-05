@@ -1,12 +1,13 @@
 // @ts-check
 
-import { nz3, x3, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
+import { ny3, nz3, x3, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
 import { FlatPart } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { metalMaterial } from "./cade/lib/materials.js";
 import { cut, extrusion, fuse, multiExtrusion } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
-import { norm, placeAlong } from "./cade/tools/2d.js";
+import { makeFourDrills } from "./cade/lib/utils.js";
+import { norm, placeAlong, rotatePoint } from "./cade/tools/2d.js";
 import { plus3, proj2d } from "./cade/tools/3d.js";
 import { getCircleCenter, intersectLineAndArc } from "./cade/tools/circle.js";
 import { Path } from "./cade/tools/path.js";
@@ -69,15 +70,20 @@ export function fastenSubpartToFlatPart(parent, subpart, part, holeIterator) {
   const subPlacement = parent.findChild(subpart).placement;
 
   const subToPart = partPlacement.inverse().multiply(subPlacement);
-  const fastenToTheFront = transformPoint3(subToPart, zero3)[2] > part.thickness / 2;
+  const fastenToTheFront =
+    transformPoint3(subToPart, zero3)[2] > part.thickness / 2;
 
-  for (const { hole, depth, transform: holeTransform } of holeIterator(subpart)) {
-
+  for (const { hole, depth, transform: holeTransform } of holeIterator(
+    subpart,
+  )) {
     const [, p1, , p2] = hole.getSegmentAt(1);
     const diameter = norm(p1, p2);
 
     const requiredClampingLength = depth + part.thickness;
-    const { bolt, nut, washer } = getFastenerKit(diameter, requiredClampingLength);
+    const { bolt, nut, washer } = getFastenerKit(
+      diameter,
+      requiredClampingLength,
+    );
 
     const location = [...placeAlong(p1, p2, { fraction: 0.5 }), 0];
     const holeToSubToPart = subToPart.multiply(holeTransform);
@@ -86,17 +92,24 @@ export function fastenSubpartToFlatPart(parent, subpart, part, holeIterator) {
     const locatedPath = Path.makeCircle(diameter / 2).translate(loc);
     part.addInsides(locatedPath);
 
-    const fastenerLocation = partPlacement.multiply(a2m([...loc, fastenToTheFront ? 0 : part.thickness], fastenToTheFront ? nz3 : z3));
+    const fastenerLocation = partPlacement.multiply(
+      a2m(
+        [...loc, fastenToTheFront ? 0 : part.thickness],
+        fastenToTheFront ? nz3 : z3,
+      ),
+    );
     const topLocation = fastenerLocation.multiply(
       a2m([0, 0, -depth - part.thickness]),
     );
 
-    const bottomLocation = fastenerLocation
-      .multiply(a2m(zero3, nz3));
+    const bottomLocation = fastenerLocation.multiply(a2m(zero3, nz3));
 
     subpart.pairings.push({ ...parent.addChild(bolt, topLocation), parent });
     subpart.pairings.push({ ...parent.addChild(washer, topLocation), parent });
-    subpart.pairings.push({ ...parent.addChild(washer, bottomLocation), parent });
+    subpart.pairings.push({
+      ...parent.addChild(washer, bottomLocation),
+      parent,
+    });
     subpart.pairings.push({ ...parent.addChild(nut, bottomLocation), parent });
   }
 }
@@ -104,3 +117,44 @@ export function fastenSubpartToFlatPart(parent, subpart, part, holeIterator) {
 export const yRail = new Part("y rail", cut(body, holes));
 yRail.material = metalMaterial;
 yRail.symmetries = [0, NaN, 0];
+
+export const railCenter = yRailHeight - yRailDiameter / 2;
+const chariotDiameter = 20;
+const chariotHeight = 27.6;
+const chariotTop = 17;
+const chariotBottom = chariotHeight - chariotTop;
+const chariotSide = 20;
+const chariotLength = 39;
+
+const chariotProfile = new Path();
+chariotProfile.moveTo([0, chariotDiameter / 2]);
+chariotProfile.arc([0, -chariotDiameter / 2], chariotDiameter / 2, 0);
+chariotProfile.intersectLineTo(
+  zero2,
+  rotatePoint(zero2, [0, -chariotDiameter], (40 * Math.PI) / 180),
+);
+chariotProfile.intersectLineTo(
+  [0, -chariotBottom],
+  [chariotSide, -chariotBottom],
+);
+chariotProfile.lineTo([chariotSide, chariotTop]);
+chariotProfile.lineTo([0, chariotTop]);
+chariotProfile.mirror();
+
+const holeSize = 5;
+const drills = makeFourDrills(
+  a2m([0, chariotTop, chariotLength / 2], y3),
+  holeSize,
+  10,
+  // TODO: check this
+  [28 / 2, 26 / 2],
+);
+
+export const chariot = new Part(
+  "y chariot",
+  cut(
+    extrusion(a2m([0, railCenter, 0]), chariotLength, chariotProfile),
+    drills,
+  ),
+);
+chariot.material = metalMaterial;

@@ -34,7 +34,7 @@ import {
   screwCenterToSupport,
   yRailLength,
 } from "./dimensions.js";
-import { m5Bolt, m5Nut, m5Washer } from "./fasteners.js";
+import {makeFourDrills} from "./cade/lib/utils.js";
 
 const bf12Thickness = 20;
 export const bk12Thickness = 25;
@@ -182,8 +182,7 @@ const rollerThickness = 40;
 const rollerWidth = 52;
 
 // TODO: check this
-const rollerThreadXDistance = 40;
-const rollerThreadYDistance = 24;
+const centerToHole = [40 / 2, 24 / 2];
 const rollerThreadSize = 5;
 const rollerThreadDepth = 10;
 
@@ -209,24 +208,12 @@ const somewhatOval = Path.makeCircle(
   ballScrewPlateDiameter / 2,
 ).booleanIntersection(rollerBbox);
 
-const rollerThreads = [];
-const threadHole = Path.makeCircle(rollerThreadSize / 2);
 
-for (const xSign of [1, -1]) {
-  for (const ySign of [1, -1]) {
-    rollerThreads.push(
-      threadHole.translate([
-        (xSign * rollerThreadXDistance) / 2,
-        (ySign * rollerThreadYDistance) / 2,
-      ]),
-    );
-  }
-}
-
-const rollerHoles = multiExtrusion(
-  a2m([0, -rollerThreadDepth, rollerLength / 2], ny3),
-  2 * rollerThreadDepth,
-  ...rollerThreads,
+const drills = makeFourDrills(
+  a2m([0, 0, rollerLength / 2], ny3),
+  rollerThreadSize,
+  rollerThreadDepth,
+  centerToHole,
 );
 
 const ballScrewPlate = extrusion(
@@ -243,6 +230,6 @@ const rollercenterHole = extrusion(
 
 export const roller = new Part(
   "roller",
-  cut(fuse(cut(rollerSolid, rollerHoles), ballScrewPlate), rollercenterHole),
+  cut(fuse(cut(rollerSolid, drills), ballScrewPlate), rollercenterHole),
 );
 roller.material = metalMaterial;

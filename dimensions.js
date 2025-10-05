@@ -1,6 +1,5 @@
 // @ts-check
 
-const xRailLength = 1000;
 export const yRailLength = 1000;
 const zRailLength = 350;
 
@@ -11,6 +10,8 @@ export const xRailSupportWidth = 100;
 export const zAxisTravel = zRailLength - carrierWheelbase;
 
 export const yRailEndSpace = 18;
+export const aluExtrusionLength = 1000;
+const xRailLength = aluExtrusionLength;
 
 export const openArea = {
   x: xRailLength,
@@ -50,3 +51,10 @@ export const motorSupportHeight = screwCenter + motorSupportWidth / 2;
 export const motorSpaceDepth = screwCenter - motorSupportWidth / 2;
 
 export const bfkSupportExtension = woodThickness - 1;
+
+export const aluExtrusionHeight = 149;
+export const aluExtrusionThickness = 30;
+
+export const chariotWheelbase = 180;
+
+export const gantryPosition = 450;
