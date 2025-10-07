@@ -121,10 +121,11 @@ yRail.symmetries = [0, NaN, 0];
 export const railCenter = yRailHeight - yRailDiameter / 2;
 const chariotDiameter = 20;
 const chariotHeight = 27.6;
-const chariotTop = 17;
+export const chariotTop = 17;
 const chariotBottom = chariotHeight - chariotTop;
 const chariotSide = 20;
-const chariotLength = 39;
+export const chariotLength = 39;
+export const railTopToBottom = yRailHeight - yRailDiameter + chariotTop;
 
 const chariotProfile = new Path();
 chariotProfile.moveTo([0, chariotDiameter / 2]);
@@ -158,3 +159,4 @@ export const chariot = new Part(
   ),
 );
 chariot.material = metalMaterial;
+chariot.symmetries = [-chariotLength / 2, NaN, NaN];

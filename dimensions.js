@@ -4,8 +4,10 @@ export const yRailLength = 1000;
 const zRailLength = 350;
 
 export const woodThickness = 15;
-const carrierWheelbase = 200;
-export const xRailSupportWidth = 100;
+export const carrierWheelbase = 200;
+
+export const typicalWidth = 100;
+export const xRailSupportWidth = typicalWidth;
 
 export const zAxisTravel = zRailLength - carrierWheelbase;
 
@@ -24,7 +26,7 @@ export const defaultSpindleSize = 6;
 export const mediumClearance = 2;
 
 export const joinOffset = 10;
-export const joinWidth = 100 - 2 * woodThickness;
+export const joinWidth = typicalWidth - 2 * woodThickness;
 export const joinSpace = 2 * joinOffset + woodThickness;
 
 export const bridgeTopThickness = zAxisTravel;
@@ -54,7 +56,5 @@ export const bfkSupportExtension = woodThickness - 1;
 
 export const aluExtrusionHeight = 149;
 export const aluExtrusionThickness = 30;
-
-export const chariotWheelbase = 180;
 
 export const gantryPosition = 450;

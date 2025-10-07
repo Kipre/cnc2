@@ -39,7 +39,7 @@ import {makeFourDrills} from "./cade/lib/utils.js";
 const bf12Thickness = 20;
 export const bk12Thickness = 25;
 const supportHeight = 43;
-const supportWidth = 60;
+export const bfk12Width = 60;
 const indentDepth = 10.5;
 const indentWidth = 13;
 const holeOffset = 7;
@@ -57,20 +57,20 @@ const shaftHole = Path.makeCircle(shaftHoleDiameter / 2).translate(shaftCenter);
 
 const supportProfile = new Path();
 supportProfile.moveTo([0, 0]);
-supportProfile.lineTo([supportWidth / 2, 0]);
-supportProfile.lineTo([supportWidth / 2, supportHeight - indentDepth]);
+supportProfile.lineTo([bfk12Width / 2, 0]);
+supportProfile.lineTo([bfk12Width / 2, supportHeight - indentDepth]);
 supportProfile.lineTo([
-  supportWidth / 2 - indentWidth,
+  bfk12Width / 2 - indentWidth,
   supportHeight - indentDepth,
 ]);
-supportProfile.lineTo([supportWidth / 2 - indentWidth, supportHeight]);
+supportProfile.lineTo([bfk12Width / 2 - indentWidth, supportHeight]);
 supportProfile.lineTo([0, supportHeight]);
 supportProfile.mirror();
 
 const sideHoles = [];
 for (const xSign of [1, -1]) {
   for (const y of [holeOffset, supportHeight - indentDepth - holeOffset]) {
-    const x = supportWidth / 2 - holeOffset;
+    const x = bfk12Width / 2 - holeOffset;
     sideHoles.push(
       Path.makeCircle(sideHoleDiameter / 2).translate([xSign * x, y]),
     );
@@ -86,7 +86,7 @@ const makeBody = (thickness) =>
     ...sideHoles,
   );
 
-const topHoleY = supportWidth / 2 - holeOffset;
+const topHoleY = bfk12Width / 2 - holeOffset;
 
 const bfTopHoles = multiExtrusion(
   a2m([0, 0, -supportHeight / 2]),
@@ -104,7 +104,7 @@ const bkTopHoles = multiExtrusion(
   Path.makeCircle(topHoleDiameter / 2).translate([bkTopHoleOffset, -topHoleY]),
 );
 
-const plateSide = supportWidth - 2 * indentWidth - 1;
+const plateSide = bfk12Width - 2 * indentWidth - 1;
 const bkPlate = extrusion(
   a2m([bk12Thickness / 2, 0, 0], x3),
   5,
@@ -189,6 +189,8 @@ const rollerThreadDepth = 10;
 const ballScrewPlateThickness = 10;
 const ballScrewPlateDiameter = 48;
 
+export const baseSurfaceToRollerSurface = shaftY + rollerThickness / 2;
+
 const rollerBbox = Path.makeRect(rollerWidth, rollerThickness).translate([
   -rollerWidth / 2,
   -rollerThickness / 2,
@@ -233,3 +235,4 @@ export const roller = new Part(
   cut(fuse(cut(rollerSolid, drills), ballScrewPlate), rollercenterHole),
 );
 roller.material = metalMaterial;
+roller.symmetries = [NaN,0,  NaN];
