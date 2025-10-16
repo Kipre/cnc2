@@ -38,7 +38,7 @@ import {makeFourDrills} from "./cade/lib/utils.js";
 
 const bf12Thickness = 20;
 export const bk12Thickness = 25;
-const supportHeight = 43;
+export const bkf12Height = 43;
 export const bfk12Width = 60;
 const indentDepth = 10.5;
 const indentWidth = 13;
@@ -58,18 +58,18 @@ const shaftHole = Path.makeCircle(shaftHoleDiameter / 2).translate(shaftCenter);
 const supportProfile = new Path();
 supportProfile.moveTo([0, 0]);
 supportProfile.lineTo([bfk12Width / 2, 0]);
-supportProfile.lineTo([bfk12Width / 2, supportHeight - indentDepth]);
+supportProfile.lineTo([bfk12Width / 2, bkf12Height - indentDepth]);
 supportProfile.lineTo([
   bfk12Width / 2 - indentWidth,
-  supportHeight - indentDepth,
+  bkf12Height - indentDepth,
 ]);
-supportProfile.lineTo([bfk12Width / 2 - indentWidth, supportHeight]);
-supportProfile.lineTo([0, supportHeight]);
+supportProfile.lineTo([bfk12Width / 2 - indentWidth, bkf12Height]);
+supportProfile.lineTo([0, bkf12Height]);
 supportProfile.mirror();
 
 const sideHoles = [];
 for (const xSign of [1, -1]) {
-  for (const y of [holeOffset, supportHeight - indentDepth - holeOffset]) {
+  for (const y of [holeOffset, bkf12Height - indentDepth - holeOffset]) {
     const x = bfk12Width / 2 - holeOffset;
     sideHoles.push(
       Path.makeCircle(sideHoleDiameter / 2).translate([xSign * x, y]),
@@ -89,15 +89,15 @@ const makeBody = (thickness) =>
 const topHoleY = bfk12Width / 2 - holeOffset;
 
 const bfTopHoles = multiExtrusion(
-  a2m([0, 0, -supportHeight / 2]),
-  supportHeight * 2,
+  a2m([0, 0, -bkf12Height / 2]),
+  bkf12Height * 2,
   Path.makeCircle(topHoleDiameter / 2).translate([0, topHoleY]),
   Path.makeCircle(topHoleDiameter / 2).translate([0, -topHoleY]),
 );
 
 const bkTopHoles = multiExtrusion(
-  a2m([0, 0, -supportHeight / 2]),
-  supportHeight * 2,
+  a2m([0, 0, -bkf12Height / 2]),
+  bkf12Height * 2,
   Path.makeCircle(topHoleDiameter / 2).translate([-bkTopHoleOffset, topHoleY]),
   Path.makeCircle(topHoleDiameter / 2).translate([-bkTopHoleOffset, -topHoleY]),
   Path.makeCircle(topHoleDiameter / 2).translate([bkTopHoleOffset, topHoleY]),

@@ -39,6 +39,7 @@ import {
   roller,
   screwAssy,
   bfk12Width,
+  bkf12Height,
 } from "./screw.js";
 
 const height = aluExtrusionHeight;
@@ -80,7 +81,11 @@ export const gantry = new Assembly("gantry");
 gantry.addChild(gantryHalf);
 gantry.addChild(
   screwAssy,
-  a2m([-extrusionOffset, bfk12Width / 2 + gantrySinking, 0], x3, z3),
+  a2m(
+    [-extrusionOffset + bkf12Height + 1, bfk12Width / 2 + woodThickness, 65],
+    nx3,
+    z3,
+  ),
 );
 gantry.addChild(
   aluExtrusion,
@@ -110,5 +115,5 @@ gantry.addAttachListener((parent, loc) => {
     screwOrigin.rotate(0, 0, 180).translate(0, 0, -gantryPosition),
   );
 
-  gantry.addChild(gantryHalf.mirror(), a2m([0, 0, openArea.x]));
+  gantry.addChild(gantryHalf.mirror([0, 0, 1]), a2m([0, 0, openArea.x]));
 });

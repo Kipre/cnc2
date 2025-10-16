@@ -116,7 +116,7 @@ export function fastenSubpartToFlatPart(parent, subpart, part, holeIterator) {
 
 export const yRail = new Part("y rail", cut(body, holes));
 yRail.material = metalMaterial;
-yRail.symmetries = [0, NaN, 0];
+yRail.symmetries = [0, NaN, NaN];
 
 export const railCenter = yRailHeight - yRailDiameter / 2;
 const chariotDiameter = 20;
@@ -159,4 +159,4 @@ export const chariot = new Part(
   ),
 );
 chariot.material = metalMaterial;
-chariot.symmetries = [-chariotLength / 2, NaN, NaN];
+chariot.symmetries = [0, NaN, NaN];
