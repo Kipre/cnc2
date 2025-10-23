@@ -125,7 +125,7 @@ export const chariotTop = 17;
 const chariotBottom = chariotHeight - chariotTop;
 const chariotSide = 20;
 export const chariotLength = 39;
-export const railTopToBottom = yRailHeight - yRailDiameter + chariotTop;
+export const railTopToBottom = yRailHeight - yRailDiameter/2 + chariotTop;
 
 const chariotProfile = new Path();
 chariotProfile.moveTo([0, chariotDiameter / 2]);

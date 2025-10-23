@@ -1,40 +1,28 @@
 // @ts-check
 
 import {
-  nx3,
   ny3,
-  nz3,
   x3,
   y2,
-  y3,
-  z3,
   zero2,
   zero3,
 } from "./cade/lib/defaults.js";
 import {
-  findFlatPartIntersection,
-  FlatPart,
-  projectPlane,
   spindleCleared2LineTo,
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { blackMetalMaterial, metalMaterial } from "./cade/lib/materials.js";
 import { cut, extrusion, fuse, multiExtrusion } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
-import { intersectLines, minus, norm, placeAlong } from "./cade/tools/2d.js";
-import { cross, dot3, mult3, plus3, proj2d } from "./cade/tools/3d.js";
-import { getCircleCenter, intersectLineAndArc } from "./cade/tools/circle.js";
+import {makeFourDrills} from "./cade/lib/utils.js";
+import { minus } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
-import { debugGeometry } from "./cade/tools/svg.js";
-import { a2m, transformPoint3 } from "./cade/tools/transform.js";
+import { a2m } from "./cade/tools/transform.js";
 import {
   bfkSupportExtension,
-  openArea,
   screwCenter,
   screwCenterToSupport,
-  yRailLength,
 } from "./dimensions.js";
-import {makeFourDrills} from "./cade/lib/utils.js";
 
 const bf12Thickness = 20;
 export const bk12Thickness = 25;
@@ -182,7 +170,7 @@ const rollerThickness = 40;
 const rollerWidth = 52;
 
 // TODO: check this
-const centerToHole = [40 / 2, 24 / 2];
+export const rollerCenterToHole = [40 / 2, 24 / 2];
 const rollerThreadSize = 5;
 const rollerThreadDepth = 10;
 
@@ -215,7 +203,7 @@ const drills = makeFourDrills(
   a2m([0, 0, rollerLength / 2], ny3),
   rollerThreadSize,
   rollerThreadDepth,
-  centerToHole,
+  rollerCenterToHole,
 );
 
 const ballScrewPlate = extrusion(
