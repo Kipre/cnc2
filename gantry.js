@@ -10,7 +10,7 @@ import {
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { TenonMortise } from "./cade/lib/slots.js";
-import { plus } from "./cade/tools/2d.js";
+import { placeAlong, plus } from "./cade/tools/2d.js";
 import { cross, minus3, norm3 } from "./cade/tools/3d.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
@@ -134,15 +134,15 @@ gantry.addChild(
 const layout = [
   new CylinderNutFastener(0.8),
   new TenonMortise(0.5),
-  new CylinderNutFastener(0.2),
+  new CylinderNutFastener(0.1),
 ];
 
 const nonCenteredTenon = [new CylinderNutFastener(0.7), new TenonMortise(0.3)];
 
-joinParts(gantry, bottom, inner, layout);
-joinParts(gantry, bottom, outer, layout);
+joinParts(gantryHalf, bottom, inner, layout);
+joinParts(gantryHalf, bottom, outer, layout);
 
-function makeGantryJoin(start, end, offset = 0) {
+function makeGantryJoin(name, start, end, offset = 0) {
   const p1 = [...start, -joinOffset];
   const p2 = [...end, -joinOffset];
   const origin = transformPoint3(locatedInner.placement, p2);
@@ -157,15 +157,17 @@ function makeGantryJoin(start, end, offset = 0) {
     joinOffset,
     roundingRadius,
   );
-  gantry.addChild(join, joinMatrix.translate(0, 0, offset));
-  joinParts(gantry, inner, join, layout);
-  joinParts(gantry, outer, join, layout);
+  join.name = name;
+  gantryHalf.addChild(join, joinMatrix.translate(0, 0, offset));
+  joinParts(gantryHalf, inner, join, layout);
+  joinParts(gantryHalf, outer, join, layout);
   return join;
 }
 
-const angledJoin = makeGantryJoin(angledLine[1], angledLine[3]);
-const backJoin = makeGantryJoin(backLine[3], backLine[1], -woodThickness);
-joinParts(gantry, bottom, backJoin, nonCenteredTenon);
+const angledLineEnd = placeAlong(angledLine[1], angledLine[3], {fromEnd: -woodThickness});
+const angledJoin = makeGantryJoin("gantry top join", angledLine[1], angledLineEnd);
+const backJoin = makeGantryJoin("gantry back join", backLine[3], backLine[1], -woodThickness);
+joinParts(gantryHalf, bottom, backJoin, nonCenteredTenon);
 
 {
   const railClearanceHeight = 15;
