@@ -1,12 +1,20 @@
 // @ts-check
 
 import { aluExtrusion } from "./aluminumExtrusion.js";
-import { nx3, ny3, nz3, x3, y3, z3, zero3 } from "./cade/lib/defaults.js";
-import { FlatPart } from "./cade/lib/flat.js";
+import { nx3, nz3, y2, y3, z3, zero2 } from "./cade/lib/defaults.js";
+import {
+  FlatPart,
+  joinParts,
+  makeJoinFromEdgePoints,
+  makeShelfOnPlane,
+} from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
+import { TenonMortise } from "./cade/lib/slots.js";
 import { plus } from "./cade/tools/2d.js";
+import { cross, minus3, norm3 } from "./cade/tools/3d.js";
 import { Path } from "./cade/tools/path.js";
-import { a2m } from "./cade/tools/transform.js";
+import { debugGeometry } from "./cade/tools/svg.js";
+import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import {
   aluExtrusionHeight,
   aluExtrusionThickness,
@@ -28,6 +36,7 @@ import {
   woodThickness,
   xRailSupportWidth,
 } from "./dimensions.js";
+import { CylinderNutFastener, defaultSlotLayout } from "./fasteners.js";
 import {
   chariot,
   chariotLength,
@@ -47,12 +56,20 @@ import {
 const height = aluExtrusionHeight;
 const width = carrierWheelbase;
 const gapFromTunnel = 10 + joinOffset;
+const angleFillet = 150;
 
 const innerPath = new Path();
 innerPath.moveTo([0, 0]);
 innerPath.lineTo([0, height]);
+const backLine = innerPath.getSegmentAt(-1);
+
 innerPath.lineTo([width, height]);
 innerPath.lineTo([width, 0]);
+innerPath.fillet(angleFillet);
+
+const angledLine = innerPath.getSegmentAt(-2);
+
+const outerPath = innerPath.clone();
 innerPath.close();
 
 export const inner = new FlatPart(
@@ -61,21 +78,12 @@ export const inner = new FlatPart(
   innerPath,
 );
 
-const outerPath = new Path();
-outerPath.moveTo([0, 0]);
-outerPath.lineTo([0, height]);
-outerPath.lineTo([width, height]);
-outerPath.lineTo([width, 0]);
 const rollerCenter = [width / 3, -(tunnelHeight - screwShaftZ + joinOffset)];
-{
-  const [x, y] = plus(rollerCenterToHole, [joinOffset, joinOffset]);
-  // outerPath.lineTo(plus(rollerCenter, [y, x]));
-  outerPath.lineTo(plus(rollerCenter, [y, -x]));
-  outerPath.lineTo(plus(rollerCenter, [-y, -x]));
-  // outerPath.lineTo(plus(rollerCenter, [-y, x]));
-}
+const [x, y] = plus(rollerCenterToHole, [joinOffset, joinOffset]);
+outerPath.lineTo(plus(rollerCenter, [y, -x]));
+outerPath.lineTo(plus(rollerCenter, [-y, -x]));
 outerPath.close();
-outerPath.roundFilletAll(roundingRadius);
+// outerPath.roundFilletAll(roundingRadius);
 
 export const outer = new FlatPart(
   "outer gantry support",
@@ -97,9 +105,13 @@ const gantrySinking = -railTopToBottom + gapFromTunnel;
 const extrusionOffset = 50;
 
 export const gantryHalf = new Assembly("gantry half");
-gantryHalf.addChild(inner, a2m([0, gantrySinking, 0], nz3, nx3));
+const locatedInner = gantryHalf.addChild(
+  inner,
+  a2m([0, gantrySinking, 0], nz3, nx3),
+);
+
 gantryHalf.addChild(bottom, a2m([-carrierWheelbase, 0, -woodThickness], y3));
-gantryHalf.addChild(
+const locatedOuter = gantryHalf.addChild(
   outer,
   a2m([0, gantrySinking, -gantrySupportWidth - woodThickness], nz3, nx3),
 );
@@ -118,6 +130,53 @@ gantry.addChild(
   aluExtrusion,
   a2m([-aluExtrusionThickness - extrusionOffset, gantrySinking, 0]),
 );
+
+const layout = [
+  new CylinderNutFastener(0.8),
+  new TenonMortise(0.5),
+  new CylinderNutFastener(0.2),
+];
+
+const nonCenteredTenon = [new CylinderNutFastener(0.7), new TenonMortise(0.3)];
+
+joinParts(gantry, bottom, inner, layout);
+joinParts(gantry, bottom, outer, layout);
+
+function makeGantryJoin(start, end, offset = 0) {
+  const p1 = [...start, -joinOffset];
+  const p2 = [...end, -joinOffset];
+  const origin = transformPoint3(locatedInner.placement, p2);
+  const eax = transformPoint3(locatedInner.placement, p1);
+  const why = transformPoint3(locatedOuter.placement, p2);
+
+  const { child: join, placement: joinMatrix } = makeJoinFromEdgePoints(
+    origin,
+    eax,
+    why,
+    woodThickness,
+    joinOffset,
+    roundingRadius,
+  );
+  gantry.addChild(join, joinMatrix.translate(0, 0, offset));
+  joinParts(gantry, inner, join, layout);
+  joinParts(gantry, outer, join, layout);
+  return join;
+}
+
+const angledJoin = makeGantryJoin(angledLine[1], angledLine[3]);
+const backJoin = makeGantryJoin(backLine[3], backLine[1], -woodThickness);
+joinParts(gantry, bottom, backJoin, nonCenteredTenon);
+
+{
+  const railClearanceHeight = 15;
+  const railClearance = new Path();
+  railClearance.moveTo([-railClearanceHeight, 0]);
+  railClearance.arc([railClearanceHeight, 0], railClearanceHeight, 1);
+  const [idx3] = backJoin.outside.findSegmentsOnLine(zero2, y2);
+  backJoin.outside.insertFeature(railClearance, idx3, {
+    fromStart: xRailSupportWidth / 2  + woodThickness / 2,
+  });
+}
 
 gantry.addAttachListener((parent, loc) => {
   const { placement } = parent.findChild(yRail);

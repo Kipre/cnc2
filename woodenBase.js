@@ -1,74 +1,6 @@
 // @ts-check
 
 import {
-  nx3,
-  ny3,
-  nz3,
-  x3,
-  y2,
-  y3,
-  z3,
-  zero2,
-  zero3,
-} from "./cade/lib/defaults.js";
-import {
-  cloneAndMirrorChildren,
-  cloneChildrenWithTransform,
-  findFlatPartIntersection,
-  FlatPart,
-  halfLapCrossJoin,
-  joinParts,
-  makeShelfOnPlane,
-  projectPlane,
-  spindleClearedLineTo,
-} from "./cade/lib/flat.js";
-import { Assembly } from "./cade/lib/lib.js";
-import { DrawerSlot, makeTenon, TenonMortise } from "./cade/lib/slots.js";
-import {
-  CylinderNutFastener,
-  defaultSlotLayout,
-  m6Fastener,
-} from "./fasteners.js";
-import { Path } from "./cade/tools/path.js";
-import {
-  a2m,
-  transformOnlyOrigin,
-  transformPoint3,
-} from "./cade/tools/transform.js";
-import {
-  openArea,
-  woodThickness,
-  xRailSupportWidth,
-  zAxisTravel,
-  yRailEndSpace,
-  joinWidth,
-  bridgeTop,
-  joinOffset,
-  joinSpace,
-  tunnelOpeningHeight,
-  tunnelHeight,
-  roundingRadius,
-  screwSinking,
-  motorSupportWidth,
-  motorSupportHeight,
-  defaultSpindleSize,
-  screwShaftZ,
-  bfkSupportExtension,
-} from "./dimensions.js";
-import { fastenSubpartToFlatPart, yRail, yRailHoleFinder } from "./rails.js";
-import {
-  bf12,
-  bk12,
-  bk12Thickness,
-  bkfHoleFinder,
-  makeBKPlateCutout,
-  roller,
-  screwAssy,
-  screwShaftPlacement,
-} from "./screw.js";
-import { minus3, mult3, norm3 } from "./cade/tools/3d.js";
-import { innerTunnel, outerTunnel, tunnel } from "./tunnel.js";
-import {
   bridge,
   innerBridge,
   outerBridge,
@@ -76,8 +8,62 @@ import {
   secondInnerBridge,
   secondOuterBridge,
 } from "./bridge.js";
+import {
+  nx3,
+  nz3,
+  x3,
+  y3,
+  z3,
+  zero3,
+} from "./cade/lib/defaults.js";
+import {
+  FlatPart,
+  findFlatPartIntersection,
+  halfLapCrossJoin,
+  joinParts,
+  makeShelfOnPlane,
+} from "./cade/lib/flat.js";
+import { Assembly } from "./cade/lib/lib.js";
+import { DrawerSlot, makeTenon, TenonMortise } from "./cade/lib/slots.js";
+import { mult3 } from "./cade/tools/3d.js";
+import {
+  a2m,
+  transformOnlyOrigin,
+  transformPoint3,
+} from "./cade/tools/transform.js";
+import {
+  bfkSupportExtension,
+  bridgeTop,
+  defaultSpindleSize,
+  joinOffset,
+  joinSpace,
+  joinWidth,
+  motorSupportWidth,
+  openArea,
+  screwShaftZ,
+  screwSinking,
+  tunnelHeight,
+  tunnelOpeningHeight,
+  woodThickness,
+  xRailSupportWidth,
+  yRailEndSpace,
+} from "./dimensions.js";
+import {
+  CylinderNutFastener,
+  defaultSlotLayout,
+} from "./fasteners.js";
 import { motorHolesGetter, motorWithCoupler, nema23 } from "./motor.js";
-import { debugGeometry } from "./cade/tools/svg.js";
+import { fastenSubpartToFlatPart, yRail, yRailHoleFinder } from "./rails.js";
+import {
+  bf12,
+  bk12,
+  bk12Thickness,
+  bkfHoleFinder,
+  makeBKPlateCutout,
+  screwAssy,
+  screwShaftPlacement,
+} from "./screw.js";
+import { innerTunnel, outerTunnel, tunnel } from "./tunnel.js";
 
 const machineCenter = [openArea.x / 2, openArea.y / 2, 0];
 const mirrorX = new DOMMatrix()
