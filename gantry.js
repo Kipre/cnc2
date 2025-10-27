@@ -1,7 +1,7 @@
 // @ts-check
 
 import { aluExtrusion } from "./aluminumExtrusion.js";
-import { nx3, nz3, x3, y2, y3, z3, zero2 } from "./cade/lib/defaults.js";
+import { nx3, nz3, x3, y2, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
 import {
   FlatPart,
   joinParts,
@@ -10,8 +10,15 @@ import {
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { TenonMortise } from "./cade/lib/slots.js";
+import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { placeAlong, plus } from "./cade/tools/2d.js";
-import { cross, minus3, norm3 } from "./cade/tools/3d.js";
+import {
+  cross,
+  minus3,
+  norm3,
+  proj2d,
+  projectToPlane,
+} from "./cade/tools/3d.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
@@ -49,6 +56,7 @@ import {
   baseSurfaceToRollerSurface,
   bfk12Width,
   bkf12Height,
+  bkPlateCutout,
   roller,
   rollerCenterToHole,
   screwAssy,
@@ -124,9 +132,9 @@ gantry.addChild(
   a2m([-extrusionOffset, bfk12Width / 2 + woodThickness, 26], x3, z3),
 );
 {
-  const screwOrigin = new DOMMatrix()
-    .inverse()
-    .multiply(gantry.findChild(screwAssy.children.at(-1).child).placement);
+  const screwOrigin = gantry.findChild(
+    screwAssy.children.at(-1).child,
+  ).placement;
 
   gantry.addChild(
     roller,
@@ -222,6 +230,7 @@ gantry.addAttachListener((parent, loc) => {
   const screwOrigin = loc
     .inverse()
     .multiply(parent.findChild(screwAssy.children.at(-1).child).placement);
+
   gantryHalf.addChild(
     roller,
     screwOrigin.rotate(0, 0, 180).translate(0, 0, -gantryPosition + 115),
@@ -230,6 +239,7 @@ gantry.addAttachListener((parent, loc) => {
   const secondSupport = gantryHalf.mirror(z3);
   const secondOuter = secondSupport.forkChild(outer);
   const secondBackJoin = secondSupport.forkChild(backJoin);
+  const secondInner = secondSupport.forkChild(inner);
 
   gantry.addChild(secondSupport, a2m([0, 0, openArea.x]));
 
@@ -255,4 +265,11 @@ gantry.addAttachListener((parent, loc) => {
     centeredBolt,
     centeredBolt,
   );
+
+  const shaftOnInner = locateOriginOnFlatPart(
+    gantry,
+    secondInner,
+    screwAssy.children.at(-1).child,
+  );
+  secondInner.addInsides(bkPlateCutout.translate(shaftOnInner));
 });

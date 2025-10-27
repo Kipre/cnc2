@@ -1,25 +1,18 @@
 // @ts-check
 
-import {
-  ny3,
-  x3,
-  y2,
-  zero2,
-  zero3,
-} from "./cade/lib/defaults.js";
-import {
-  spindleCleared2LineTo,
-} from "./cade/lib/flat.js";
+import { ny3, x3, y2, zero2, zero3 } from "./cade/lib/defaults.js";
+import { spindleCleared2LineTo } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { blackMetalMaterial, metalMaterial } from "./cade/lib/materials.js";
 import { cut, extrusion, fuse, multiExtrusion } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
-import {makeFourDrills} from "./cade/lib/utils.js";
+import { makeFourDrills } from "./cade/lib/utils.js";
 import { minus } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m } from "./cade/tools/transform.js";
 import {
   bfkSupportExtension,
+  defaultSpindleSize,
   screwCenter,
   screwCenterToSupport,
 } from "./dimensions.js";
@@ -107,7 +100,7 @@ export const bf12 = new Part(
   cut(makeBody(bf12Thickness), bfTopHoles),
 );
 bf12.material = blackMetalMaterial;
-bf12.symmetries = [NaN, 0, NaN];
+bf12.symmetries = [0, 0, NaN];
 
 export const bk12 = new Part(
   "bk12 support",
@@ -116,16 +109,16 @@ export const bk12 = new Part(
 bk12.material = blackMetalMaterial;
 bk12.symmetries = [NaN, 0, NaN];
 
-const cutoutMargin = 1;
-export function makeBKPlateCutout(spindleDiameter, radius) {
-  const depth = bfkSupportExtension - screwCenter + plateSide / 2;
-  const p = new Path();
-  p.moveTo([-2 * radius - plateSide / 2 - cutoutMargin, 0]);
-  p.lineTo([-plateSide / 2 - cutoutMargin, 0]);
-  p.arcTo([-plateSide / 2 - cutoutMargin, -depth - cutoutMargin], radius);
-  spindleCleared2LineTo(p, [0, -depth - cutoutMargin], spindleDiameter / 2);
-  p.mirror(zero2, y2);
-  return p;
+export const bkPlateCutout = new Path();
+{
+  // TODO
+  const cutoutMargin = 0;
+  const halfSide = plateSide / 2 + cutoutMargin;
+  bkPlateCutout.moveTo([halfSide, 0]);
+  bkPlateCutout.lineTo([halfSide, halfSide]);
+  spindleCleared2LineTo(bkPlateCutout, [0, halfSide], defaultSpindleSize / 2);
+  bkPlateCutout.mirror(zero2, y2);
+  bkPlateCutout.mirror();
 }
 
 export function* bkfHoleFinder(part) {
@@ -198,7 +191,6 @@ const somewhatOval = Path.makeCircle(
   ballScrewPlateDiameter / 2,
 ).booleanIntersection(rollerBbox);
 
-
 const drills = makeFourDrills(
   a2m([0, 0, rollerLength / 2], ny3),
   rollerThreadSize,
@@ -223,4 +215,4 @@ export const roller = new Part(
   cut(fuse(cut(rollerSolid, drills), ballScrewPlate), rollercenterHole),
 );
 roller.material = metalMaterial;
-roller.symmetries = [NaN,0,  NaN];
+roller.symmetries = [0, NaN, NaN];

@@ -8,14 +8,7 @@ import {
   secondInnerBridge,
   secondOuterBridge,
 } from "./bridge.js";
-import {
-  nx3,
-  nz3,
-  x3,
-  y3,
-  z3,
-  zero3,
-} from "./cade/lib/defaults.js";
+import { nx3, nz3, x3, y3, z3, zero3 } from "./cade/lib/defaults.js";
 import {
   FlatPart,
   findFlatPartIntersection,
@@ -25,6 +18,7 @@ import {
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { DrawerSlot, makeTenon, TenonMortise } from "./cade/lib/slots.js";
+import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { mult3 } from "./cade/tools/3d.js";
 import {
   a2m,
@@ -48,10 +42,7 @@ import {
   xRailSupportWidth,
   yRailEndSpace,
 } from "./dimensions.js";
-import {
-  CylinderNutFastener,
-  defaultSlotLayout,
-} from "./fasteners.js";
+import { CylinderNutFastener, defaultSlotLayout } from "./fasteners.js";
 import { motorHolesGetter, motorWithCoupler, nema23 } from "./motor.js";
 import { fastenSubpartToFlatPart, yRail, yRailHoleFinder } from "./rails.js";
 import {
@@ -59,7 +50,7 @@ import {
   bk12,
   bk12Thickness,
   bkfHoleFinder,
-  makeBKPlateCutout,
+  bkPlateCutout,
   screwAssy,
   screwShaftPlacement,
 } from "./screw.js";
@@ -241,7 +232,7 @@ let screwPlacement;
     a2m([bk12Thickness / 2, 0, 0], x3),
   );
 
-  const bkSupportPath = makeShelfOnPlane(
+  let bkSupportPath = makeShelfOnPlane(
     bkSupportPlacement,
     woodThickness,
     locatedInnerTunnel,
@@ -259,16 +250,24 @@ let screwPlacement;
   bkSupportPath.insertFeature(bkSupportTenon, 2, {
     fromStart: screwShaftZ - joinOffset - woodThickness,
   });
-  const plateCutout = makeBKPlateCutout(defaultSpindleSize, 3);
-  bkSupportPath.insertFeature(plateCutout, 6, {
-    fromStart: motorSupportWidth / 2 - 3,
-  });
 
   const bkSupport = new FlatPart(`bk support`, woodThickness, bkSupportPath);
 
   tunnel.addChild(
     bkSupport,
     tunnelPlacement.inverse().multiply(bkSupportPlacement),
+  );
+
+  const shaftCenterOnSupport = locateOriginOnFlatPart(
+    woodenBase,
+    bkSupport,
+    screwAssy.children.at(-1).child,
+  );
+
+  bkSupport.assignOutsidePath(
+    bkSupportPath.booleanDifference(
+      bkPlateCutout.translate(shaftCenterOnSupport),
+    ),
   );
 
   joinParts(tunnel, bkSupport, innerTunnel, [
@@ -280,7 +279,7 @@ let screwPlacement;
     new CylinderNutFastener(0.7),
     new DrawerSlot(false),
   ]);
-  joinParts(tunnel, bkSupport, outerTunnel, [], [new CylinderNutFastener(0.2)]);
+  joinParts(tunnel, bkSupport, outerTunnel, [new CylinderNutFastener(0.2)], []);
 
   fastenSubpartToFlatPart(woodenBase, bk12, bkSupport, bkfHoleFinder);
 }
