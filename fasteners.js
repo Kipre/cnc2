@@ -228,7 +228,8 @@ export class CylinderNutFastener extends BaseSlot {
       -Math.PI / 2,
     );
 
-    part.addInsides(this.nutHole.translate(center));
+    const barrelHole = this.nutHole.translate(center);
+    part.addInsides(barrelHole);
 
     return { path: this.boltHole, fastener: m6Fastener };
   }

@@ -1,7 +1,7 @@
 // @ts-check
 
 import { aluExtrusion } from "./aluminumExtrusion.js";
-import { nx3, nz3, y2, y3, z3, zero2 } from "./cade/lib/defaults.js";
+import { nx3, nz3, x3, y2, y3, z3, zero2 } from "./cade/lib/defaults.js";
 import {
   FlatPart,
   joinParts,
@@ -26,6 +26,7 @@ import {
   joinSpace,
   joinWidth,
   motorBodyLength,
+  motorSupportWidth,
   openArea,
   roundingRadius,
   screwShaftZ,
@@ -102,7 +103,7 @@ export const bottom = new FlatPart(
 );
 
 const gantrySinking = -railTopToBottom + gapFromTunnel;
-const extrusionOffset = 50;
+const extrusionOffset = 60;
 
 export const gantryHalf = new Assembly("gantry half");
 const locatedInner = gantryHalf.addChild(
@@ -120,12 +121,18 @@ export const gantry = new Assembly("gantry");
 gantry.addChild(gantryHalf);
 gantry.addChild(
   screwAssy,
-  a2m(
-    [-extrusionOffset + bkf12Height + 1, bfk12Width / 2 + woodThickness, 26],
-    nx3,
-    z3,
-  ),
+  a2m([-extrusionOffset, bfk12Width / 2 + woodThickness, 26], x3, z3),
 );
+{
+  const screwOrigin = new DOMMatrix()
+    .inverse()
+    .multiply(gantry.findChild(screwAssy.children.at(-1).child).placement);
+
+  gantry.addChild(
+    roller,
+    screwOrigin.rotate(0, 0, 180).translate(0, 0, -gantryPosition + 115),
+  );
+}
 gantry.addChild(
   aluExtrusion,
   a2m([-aluExtrusionThickness - extrusionOffset, gantrySinking, 0]),
@@ -137,7 +144,9 @@ const layout = [
   new CylinderNutFastener(0.1),
 ];
 
-const nonCenteredTenon = [new CylinderNutFastener(0.7), new TenonMortise(0.3)];
+const centeredBolt = [new CylinderNutFastener(0.5)];
+
+const offcenterTenon = [new CylinderNutFastener(0.7), new TenonMortise(0.3)];
 
 joinParts(gantryHalf, bottom, inner, layout);
 joinParts(gantryHalf, bottom, outer, layout);
@@ -159,15 +168,30 @@ function makeGantryJoin(name, start, end, offset = 0) {
   );
   join.name = name;
   gantryHalf.addChild(join, joinMatrix.translate(0, 0, offset));
-  joinParts(gantryHalf, inner, join, layout);
-  joinParts(gantryHalf, outer, join, layout);
   return join;
 }
 
-const angledLineEnd = placeAlong(angledLine[1], angledLine[3], {fromEnd: -woodThickness});
-const angledJoin = makeGantryJoin("gantry top join", angledLine[1], angledLineEnd);
-const backJoin = makeGantryJoin("gantry back join", backLine[3], backLine[1], -woodThickness);
-joinParts(gantryHalf, bottom, backJoin, nonCenteredTenon);
+const angledLineEnd = placeAlong(angledLine[1], angledLine[3], {
+  fromEnd: -woodThickness,
+});
+
+const angledJoin = makeGantryJoin(
+  "gantry top join",
+  angledLine[1],
+  angledLineEnd,
+);
+joinParts(gantryHalf, inner, angledJoin, layout);
+joinParts(gantryHalf, outer, angledJoin, layout);
+
+const backJoin = makeGantryJoin(
+  "gantry back join",
+  backLine[3],
+  backLine[1],
+  -woodThickness,
+);
+joinParts(gantryHalf, inner, backJoin, layout);
+
+joinParts(gantryHalf, bottom, backJoin, offcenterTenon);
 
 {
   const railClearanceHeight = 15;
@@ -176,7 +200,7 @@ joinParts(gantryHalf, bottom, backJoin, nonCenteredTenon);
   railClearance.arc([railClearanceHeight, 0], railClearanceHeight, 1);
   const [idx3] = backJoin.outside.findSegmentsOnLine(zero2, y2);
   backJoin.outside.insertFeature(railClearance, idx3, {
-    fromStart: xRailSupportWidth / 2  + woodThickness / 2,
+    fromStart: xRailSupportWidth / 2 + woodThickness / 2,
   });
 }
 
@@ -203,5 +227,32 @@ gantry.addAttachListener((parent, loc) => {
     screwOrigin.rotate(0, 0, 180).translate(0, 0, -gantryPosition + 115),
   );
 
-  gantry.addChild(gantryHalf.mirror([0, 0, 1]), a2m([0, 0, openArea.x]));
+  const secondSupport = gantryHalf.mirror(z3);
+  const secondOuter = secondSupport.forkChild(outer);
+  const secondBackJoin = secondSupport.forkChild(backJoin);
+
+  gantry.addChild(secondSupport, a2m([0, 0, openArea.x]));
+
+  const [idx2] = secondOuter.outside.findSegmentsOnLine(zero2, y2);
+
+  const motorClearance = new Path();
+  motorClearance.moveTo([-motorSupportWidth / 2, 0]);
+  motorClearance.lineTo([-motorSupportWidth / 2, -motorSupportWidth - 5]);
+  motorClearance.arcTo([0, -motorSupportWidth - 5], roundingRadius);
+  // motorClearance.lineTo([0, -motorSupportWidth]);
+  motorClearance.mirror(zero2, y2);
+
+  secondOuter.outside.insertFeature(motorClearance, idx2, {
+    fromStart: motorSupportWidth / 2 + woodThickness + gapFromTunnel,
+  });
+
+  joinParts(gantryHalf, outer, backJoin, layout);
+
+  joinParts(
+    secondSupport,
+    secondOuter,
+    secondBackJoin,
+    centeredBolt,
+    centeredBolt,
+  );
 });
