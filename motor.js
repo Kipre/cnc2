@@ -7,7 +7,14 @@ import { cut, extrusion, fuse, multiExtrusion } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
-import { motorBodyLength, motorCenteringCylinderDiameter, motorCouplerDiameter, motorSide } from "./dimensions.js";
+import {
+  motorBodyLength,
+  motorCenteringCylinderDiameter,
+  motorCouplerDiameter,
+  motorSide,
+  motorSupportWidth,
+  roundingRadius,
+} from "./dimensions.js";
 
 const side = motorSide;
 const angleInset = 9;
@@ -36,18 +43,26 @@ bodyPath.mirror(zero2, y2);
 bodyPath.mirror(zero2, x2);
 bodyPath.roundFilletAll(1.5);
 
+export const motorCenteringHole = Path.makeCircle(
+  motorCenteringCylinderDiameter / 2,
+);
+
 const body = extrusion(a2m([0, 0, plateThickness]), bodyLength, bodyPath);
-const plate = extrusion(a2m(), plateThickness, Path.makeRoundedRect(side, side, 4).translate([-side / 2, -side / 2]));
+const plate = extrusion(
+  a2m(),
+  plateThickness,
+  Path.makeRoundedRect(side, side, 4).translate([-side / 2, -side / 2]),
+);
 const centeringCylinder = extrusion(
   a2m(zero3, nz3),
   centeringCylinderThickness,
-  Path.makeCircle(motorCenteringCylinderDiameter / 2)
+  motorCenteringHole,
 );
 
 const shaft = extrusion(
   a2m(zero3, nz3),
   shaftLength,
-  Path.makeCircle(shaftDiameter / 2)
+  Path.makeCircle(shaftDiameter / 2),
 );
 
 const holeDiameter = 5.2;
@@ -57,44 +72,68 @@ const holePath = Path.makeCircle(holeDiameter / 2);
 
 for (const xSign of [1, -1]) {
   for (const ySign of [1, -1]) {
-    holePaths.push(holePath.translate([xSign * interHoles / 2, ySign * interHoles / 2]));
+    holePaths.push(
+      holePath.translate([(xSign * interHoles) / 2, (ySign * interHoles) / 2]),
+    );
   }
 }
 
-const holes = multiExtrusion(a2m([0, 0, -plateThickness / 2]), plateThickness * 2, ...holePaths);
+const holes = multiExtrusion(
+  a2m([0, 0, -plateThickness / 2]),
+  plateThickness * 2,
+  ...holePaths,
+);
 
-export function * motorHolesGetter() {
+export function* motorHolesGetter() {
   for (const path of holePaths) {
-    yield {hole: path, depth: plateThickness, transform: a2m()}; 
+    yield { hole: path, depth: plateThickness, transform: a2m() };
   }
 }
 
-export const nema23 = new Part("nema23", cut(fuse(body, plate, centeringCylinder, shaft), holes));
+export const nema23 = new Part(
+  "nema23",
+  cut(fuse(body, plate, centeringCylinder, shaft), holes),
+);
 nema23.material = blackMetalMaterial;
 // yRail.symmetries = [0, NaN, 0];
 
 const couplerBody = extrusion(
   a2m(),
   couplerLength,
-  Path.makeCircle(couplerDiameter / 2)
+  Path.makeCircle(couplerDiameter / 2),
 );
 
 const outputHole = extrusion(
   a2m([0, 0, -couplerHoleDepth]),
   couplerHoleDepth * 2,
-  Path.makeCircle(couplerOutputDiameter / 2)
+  Path.makeCircle(couplerOutputDiameter / 2),
 );
 
 const inputHole = extrusion(
   a2m([0, 0, couplerLength - couplerHoleDepth]),
   couplerHoleDepth * 2,
-  Path.makeCircle(couplerInputDiameter / 2)
+  Path.makeCircle(couplerInputDiameter / 2),
 );
 
-export const coupler = new Part("10-8 coupler", cut(couplerBody, outputHole, inputHole));
+export const coupler = new Part(
+  "10-8 coupler",
+  cut(couplerBody, outputHole, inputHole),
+);
 coupler.material = metalMaterial;
+
+export const motorSideClearance = Path.makeRoundedRect(
+  2 * motorSupportWidth,
+  motorSupportWidth,
+  roundingRadius,
+).translate([
+  -3 * motorSupportWidth / 2,
+  -motorSupportWidth / 2,
+]);
 
 export const motorWithCoupler = new Assembly("motor with coupler");
 motorWithCoupler.addChild(coupler, a2m([0, 0, -couplingDepth]));
-motorWithCoupler.addChild(nema23, a2m([0, 0, couplerLength - 2 * couplingDepth + shaftLength]));
+motorWithCoupler.addChild(
+  nema23,
+  a2m([0, 0, couplerLength - 2 * couplingDepth + shaftLength]),
+);
 motorWithCoupler.symmetries = [0, 0, NaN];

@@ -21,6 +21,7 @@ import {
   aluExtrusionHeight,
   aluExtrusionThickness,
   carrierWheelbase,
+  defaultSpindleSize,
   gantryPosition,
   joinOffset,
   motorSupportWidth,
@@ -34,11 +35,27 @@ import {
   xRailSupportWidth,
 } from "./dimensions.js";
 import { CylinderNutFastener } from "./fasteners.js";
-import { nema23 } from "./motor.js";
-import { chariot, chariotLength, railTopToBottom, yRail } from "./rails.js";
+import {
+  motorCenteringHole,
+  motorHolesGetter,
+  motorSideClearance,
+  nema23,
+} from "./motor.js";
+import {
+  boltThreadedSubpartToFlatPart,
+  chariot,
+  chariotBoltClearingRect,
+  chariotHoleFinder,
+  chariotLength,
+  fastenSubpartToFlatPart,
+  railTopToBottom,
+  yRail,
+} from "./rails.js";
 import {
   baseSurfaceToRollerSurface,
   bfk12Width,
+  bk12,
+  bkfHoleFinder,
   bkPlateCutout,
   roller,
   rollerCenterToHole,
@@ -49,6 +66,10 @@ const height = aluExtrusionHeight;
 const width = carrierWheelbase;
 const gapFromTunnel = 10 + joinOffset;
 const angleFillet = 150;
+const screwZ = 10;
+
+const tm = (x) => new TenonMortise(x);
+const cnf = (x) => new CylinderNutFastener(x);
 
 const innerPath = new Path();
 innerPath.moveTo([0, 0]);
@@ -112,7 +133,7 @@ export const gantry = new Assembly("gantry");
 gantry.addChild(gantryHalf);
 gantry.addChild(
   screwAssy,
-  a2m([-extrusionOffset, bfk12Width / 2 + woodThickness, 26], x3, z3),
+  a2m([-extrusionOffset, bfk12Width / 2 + woodThickness + screwZ, 26], x3, z3),
 );
 {
   const screwOrigin = gantry.findChild(
@@ -129,15 +150,11 @@ gantry.addChild(
   a2m([-aluExtrusionThickness - extrusionOffset, gantrySinking, 0]),
 );
 
-const layout = [
-  new CylinderNutFastener(0.8),
-  new TenonMortise(0.5),
-  new CylinderNutFastener(0.1),
-];
+const layout = [cnf(0.8), tm(0.5), cnf(0.1)];
 
-const centeredBolt = [new CylinderNutFastener(0.5)];
+const centeredBolt = [cnf(0.5)];
 
-const offcenterTenon = [new CylinderNutFastener(0.3), new TenonMortise(0.7)];
+const offcenterTenon = [cnf(0.3), tm(0.7)];
 
 joinParts(gantryHalf, bottom, inner, layout);
 joinParts(gantryHalf, bottom, outer, layout);
@@ -181,7 +198,6 @@ const backJoin = makeGantryJoin(
   -woodThickness,
 );
 joinParts(gantryHalf, inner, backJoin, layout);
-
 joinParts(gantryHalf, bottom, backJoin, offcenterTenon);
 
 {
@@ -210,6 +226,8 @@ gantry.addAttachListener((parent, loc) => {
     chariotPlacement.translate(0, 0, -carrierWheelbase + chariotLength),
   );
 
+  boltThreadedSubpartToFlatPart(gantryHalf, chariot, bottom, chariotHoleFinder);
+
   const screwOrigin = loc
     .inverse()
     .multiply(parent.findChild(screwAssy.children.at(-1).child).placement);
@@ -229,18 +247,17 @@ gantry.addAttachListener((parent, loc) => {
   const secondSupportPlace = a2m([0, 0, openArea.x]);
   gantry.addChild(secondSupport, secondSupportPlace);
 
-  const [idx2] = secondOuter.outside.findSegmentsOnLine(zero2, y2);
+  const shaftOnInner = locateOriginOnFlatPart(
+    gantry,
+    secondInner,
+    screwAssy.children.at(-1).child,
+  );
 
-  const motorClearance = new Path();
-  motorClearance.moveTo([-motorSupportWidth / 2, 0]);
-  motorClearance.lineTo([-motorSupportWidth / 2, -motorSupportWidth - 5]);
-  motorClearance.arcTo([0, -motorSupportWidth - 5], roundingRadius);
-  // motorClearance.lineTo([0, -motorSupportWidth]);
-  motorClearance.mirror(zero2, y2);
-
-  secondOuter.outside.insertFeature(motorClearance, idx2, {
-    fromStart: motorSupportWidth / 2 + woodThickness + gapFromTunnel,
-  });
+  secondOuter.assignOutsidePath(
+    secondOuter.outside.booleanDifference(
+      motorSideClearance.translate(shaftOnInner),
+    ),
+  );
 
   joinParts(gantryHalf, outer, backJoin, layout);
 
@@ -252,16 +269,12 @@ gantry.addAttachListener((parent, loc) => {
     centeredBolt,
   );
 
-  const shaftOnInner = locateOriginOnFlatPart(
-    gantry,
-    secondInner,
-    screwAssy.children.at(-1).child,
-  );
   secondInner.addInsides(bkPlateCutout.translate(shaftOnInner));
 
   const motorInGantry = gantry.findChild(
     screwAssy.findChild(nema23).child,
   ).placement;
+
   const motorPlacement = secondSupportPlace
     .inverse()
     .multiply(motorInGantry)
@@ -272,6 +285,7 @@ gantry.addAttachListener((parent, loc) => {
     0,
     -transformPoint3(motorPlacement, zero3)[2],
   );
+  motorSupportPath.cut;
   const support = new FlatPart(
     `motor support`,
     woodThickness,
@@ -280,9 +294,31 @@ gantry.addAttachListener((parent, loc) => {
   secondSupport.addChild(support, motorSupportPlacement);
 
   trimFlatPartWithAnother(secondSupport, support, secondBottom);
+  const allowableWidth = carrierWheelbase - chariotLength;
+  support.assignOutsidePath(
+    support.outside.cutOnLine([allowableWidth, 0], [allowableWidth, 1], true),
+  );
 
-  const tenonAndBolt = [new TenonMortise(0.35), new CylinderNutFastener(0.65)];
-  joinParts(secondSupport, support, secondBottom, tenonAndBolt);
+  const [origin] = support.outside.bbox().extrema();
+  support.assignOutsidePath(
+    support.outside.booleanDifference(
+      chariotBoltClearingRect.translate(origin),
+    ),
+  );
+
+  const tenonAndBolt = [tm(0.3), cnf(0.8)];
+
+  joinParts(secondSupport, support, secondBottom, [tm(0.5)]);
   joinParts(secondSupport, support, secondBackJoin, tenonAndBolt);
   joinParts(secondSupport, support, secondAngled, tenonAndBolt);
+
+  const motorCenterOnSupport = locateOriginOnFlatPart(
+    gantry,
+    support,
+    screwAssy.findChild(nema23).child,
+  );
+  support.addInsides(motorCenteringHole.translate(motorCenterOnSupport));
+
+  fastenSubpartToFlatPart(gantry, nema23, support, motorHolesGetter);
+  fastenSubpartToFlatPart(gantry, bk12, secondInner, bkfHoleFinder);
 });

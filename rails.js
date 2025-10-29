@@ -4,7 +4,13 @@ import { ny3, nz3, x3, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
 import { FlatPart } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { metalMaterial } from "./cade/lib/materials.js";
-import { cut, extrusion, fuse, multiExtrusion } from "./cade/lib/operations.js";
+import {
+  cut,
+  extrusion,
+  fuse,
+  multiExtrusion,
+  retrieveOperations,
+} from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
 import { makeFourDrills } from "./cade/lib/utils.js";
 import { norm, placeAlong, rotatePoint } from "./cade/tools/2d.js";
@@ -13,7 +19,7 @@ import { getCircleCenter, intersectLineAndArc } from "./cade/tools/circle.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
-import { yRailLength } from "./dimensions.js";
+import { defaultSpindleSize, yRailLength } from "./dimensions.js";
 import { getFastenerKit, m5Bolt, m5Nut, m5Washer } from "./fasteners.js";
 
 const yRailWidth = 30;
@@ -125,7 +131,7 @@ export const chariotTop = 17;
 const chariotBottom = chariotHeight - chariotTop;
 const chariotSide = 20;
 export const chariotLength = 39;
-export const railTopToBottom = yRailHeight - yRailDiameter/2 + chariotTop;
+export const railTopToBottom = yRailHeight - yRailDiameter / 2 + chariotTop;
 
 const chariotProfile = new Path();
 chariotProfile.moveTo([0, chariotDiameter / 2]);
@@ -143,13 +149,28 @@ chariotProfile.lineTo([0, chariotTop]);
 chariotProfile.mirror();
 
 const holeSize = 5;
+const chariotHoleDepth = 10;
+const drillsTransform = a2m([0, chariotTop, chariotLength / 2], y3);
 const drills = makeFourDrills(
-  a2m([0, chariotTop, chariotLength / 2], y3),
+  drillsTransform,
   holeSize,
-  10,
+  chariotHoleDepth,
   // TODO: check this
   [28 / 2, 26 / 2],
 );
+
+export function* chariotHoleFinder() {
+  const transform = drillsTransform;
+  for (const op of retrieveOperations(drills).slice(0, -1)) {
+    yield { hole: op.outsides[0], depth: chariotHoleDepth, transform };
+  }
+}
+
+export const chariotBoltClearingRect = Path.makeRoundedRect(
+  chariotLength * 2.2,
+  20,
+  defaultSpindleSize,
+).recenter();
 
 export const chariot = new Part(
   "y chariot",

@@ -160,7 +160,7 @@ function makeWasher(size) {
 const bolts = {};
 const rest = {};
 
-export function getFastenerKit(size, length) {
+export function getFastenerKit(size, length, addLengthForNut = true) {
   let mSize = "M3";
   if (size > 4) mSize = "M4";
   if (size > 5) mSize = "M5";
@@ -169,7 +169,10 @@ export function getFastenerKit(size, length) {
   if (size > 9 || size < 3) throw new Error("we don't have bolts this size yet");
 
   const iso = isoFastenerSizes[mSize];
-  const requiredLength = length + 2 + iso.nutThickness + 3;
+  let requiredLength = length;
+  if (addLengthForNut)
+    requiredLength += 2 + iso.nutThickness + 3;
+
   const availableLength = iso.lengths.find(x => x >= requiredLength);
   const key = `${mSize}_${availableLength}`;
 
