@@ -7,55 +7,38 @@ import {
   joinParts,
   makeJoinFromEdgePoints,
   makeShelfOnPlane,
+  trimFlatPartWithAnother,
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { TenonMortise } from "./cade/lib/slots.js";
 import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { placeAlong, plus } from "./cade/tools/2d.js";
-import {
-  cross,
-  minus3,
-  norm3,
-  proj2d,
-  projectToPlane,
-} from "./cade/tools/3d.js";
+import { mult3, proj2d } from "./cade/tools/3d.js";
 import { Path } from "./cade/tools/path.js";
-import { debugGeometry } from "./cade/tools/svg.js";
+import { BBox, debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import {
   aluExtrusionHeight,
   aluExtrusionThickness,
-  bridgeTop,
   carrierWheelbase,
-  defaultSpindleSize,
   gantryPosition,
   joinOffset,
-  joinSpace,
-  joinWidth,
-  motorBodyLength,
   motorSupportWidth,
   openArea,
   roundingRadius,
   screwShaftZ,
   screwSinking,
   tunnelHeight,
-  tunnelOpeningHeight,
   typicalWidth,
   woodThickness,
   xRailSupportWidth,
 } from "./dimensions.js";
-import { CylinderNutFastener, defaultSlotLayout } from "./fasteners.js";
-import {
-  chariot,
-  chariotLength,
-  chariotTop,
-  railTopToBottom,
-  yRail,
-} from "./rails.js";
+import { CylinderNutFastener } from "./fasteners.js";
+import { nema23 } from "./motor.js";
+import { chariot, chariotLength, railTopToBottom, yRail } from "./rails.js";
 import {
   baseSurfaceToRollerSurface,
   bfk12Width,
-  bkf12Height,
   bkPlateCutout,
   roller,
   rollerCenterToHole,
@@ -80,6 +63,8 @@ const angledLine = innerPath.getSegmentAt(-2);
 
 const outerPath = innerPath.clone();
 innerPath.close();
+
+const motorSupportPath = innerPath.clone();
 
 export const inner = new FlatPart(
   "inner gantry support",
@@ -114,10 +99,8 @@ const gantrySinking = -railTopToBottom + gapFromTunnel;
 const extrusionOffset = 60;
 
 export const gantryHalf = new Assembly("gantry half");
-const locatedInner = gantryHalf.addChild(
-  inner,
-  a2m([0, gantrySinking, 0], nz3, nx3),
-);
+const innerLocation = a2m([0, gantrySinking, 0], nz3, nx3);
+const locatedInner = gantryHalf.addChild(inner, innerLocation);
 
 gantryHalf.addChild(bottom, a2m([-carrierWheelbase, 0, -woodThickness], y3));
 const locatedOuter = gantryHalf.addChild(
@@ -154,7 +137,7 @@ const layout = [
 
 const centeredBolt = [new CylinderNutFastener(0.5)];
 
-const offcenterTenon = [new CylinderNutFastener(0.7), new TenonMortise(0.3)];
+const offcenterTenon = [new CylinderNutFastener(0.3), new TenonMortise(0.7)];
 
 joinParts(gantryHalf, bottom, inner, layout);
 joinParts(gantryHalf, bottom, outer, layout);
@@ -240,8 +223,11 @@ gantry.addAttachListener((parent, loc) => {
   const secondOuter = secondSupport.forkChild(outer);
   const secondBackJoin = secondSupport.forkChild(backJoin);
   const secondInner = secondSupport.forkChild(inner);
+  const secondBottom = secondSupport.forkChild(bottom);
+  const secondAngled = secondSupport.forkChild(angledJoin);
 
-  gantry.addChild(secondSupport, a2m([0, 0, openArea.x]));
+  const secondSupportPlace = a2m([0, 0, openArea.x]);
+  gantry.addChild(secondSupport, secondSupportPlace);
 
   const [idx2] = secondOuter.outside.findSegmentsOnLine(zero2, y2);
 
@@ -272,4 +258,31 @@ gantry.addAttachListener((parent, loc) => {
     screwAssy.children.at(-1).child,
   );
   secondInner.addInsides(bkPlateCutout.translate(shaftOnInner));
+
+  const motorInGantry = gantry.findChild(
+    screwAssy.findChild(nema23).child,
+  ).placement;
+  const motorPlacement = secondSupportPlace
+    .inverse()
+    .multiply(motorInGantry)
+    .multiply(a2m(zero3, nz3));
+
+  const motorSupportPlacement = innerLocation.translate(
+    0,
+    0,
+    -transformPoint3(motorPlacement, zero3)[2],
+  );
+  const support = new FlatPart(
+    `motor support`,
+    woodThickness,
+    motorSupportPath,
+  );
+  secondSupport.addChild(support, motorSupportPlacement);
+
+  trimFlatPartWithAnother(secondSupport, support, secondBottom);
+
+  const tenonAndBolt = [new TenonMortise(0.35), new CylinderNutFastener(0.65)];
+  joinParts(secondSupport, support, secondBottom, tenonAndBolt);
+  joinParts(secondSupport, support, secondBackJoin, tenonAndBolt);
+  joinParts(secondSupport, support, secondAngled, tenonAndBolt);
 });
