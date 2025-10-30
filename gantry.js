@@ -6,25 +6,20 @@ import {
   FlatPart,
   joinParts,
   makeJoinFromEdgePoints,
-  makeShelfOnPlane,
   trimFlatPartWithAnother,
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
-import { TenonMortise } from "./cade/lib/slots.js";
+import { HornSlot, TenonMortise } from "./cade/lib/slots.js";
 import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { placeAlong, plus } from "./cade/tools/2d.js";
-import { mult3, proj2d } from "./cade/tools/3d.js";
 import { Path } from "./cade/tools/path.js";
-import { BBox, debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import {
   aluExtrusionHeight,
   aluExtrusionThickness,
   carrierWheelbase,
-  defaultSpindleSize,
   gantryPosition,
   joinOffset,
-  motorSupportWidth,
   openArea,
   roundingRadius,
   screwShaftZ,
@@ -48,18 +43,24 @@ import {
   chariotHoleFinder,
   chariotLength,
   fastenSubpartToFlatPart,
+  fastenSubpartToFlatPartEdge,
   railTopToBottom,
   yRail,
 } from "./rails.js";
 import {
   baseSurfaceToRollerSurface,
+  bf12,
+  bf12Thickness,
   bfk12Width,
   bk12,
   bkfHoleFinder,
+  bkfTwoHoleFinder,
   bkPlateCutout,
   roller,
   rollerCenterToHole,
+  rollerHoleFinder,
   screwAssy,
+  shaftY,
 } from "./screw.js";
 
 const height = aluExtrusionHeight;
@@ -131,10 +132,13 @@ const locatedOuter = gantryHalf.addChild(
 
 export const gantry = new Assembly("gantry");
 gantry.addChild(gantryHalf);
-gantry.addChild(
-  screwAssy,
-  a2m([-extrusionOffset, bfk12Width / 2 + woodThickness + screwZ, 26], x3, z3),
+const screwPlacement = a2m(
+  [-extrusionOffset, bfk12Width / 2 + woodThickness + screwZ, 26],
+  x3,
+  z3,
 );
+gantry.addChild(screwAssy, screwPlacement);
+
 {
   const screwOrigin = gantry.findChild(
     screwAssy.children.at(-1).child,
@@ -145,6 +149,7 @@ gantry.addChild(
     screwOrigin.rotate(0, 0, 180).translate(0, 0, -gantryPosition + 115),
   );
 }
+
 gantry.addChild(
   aluExtrusion,
   a2m([-aluExtrusionThickness - extrusionOffset, gantrySinking, 0]),
@@ -198,7 +203,7 @@ const backJoin = makeGantryJoin(
   -woodThickness,
 );
 joinParts(gantryHalf, inner, backJoin, layout);
-joinParts(gantryHalf, bottom, backJoin, offcenterTenon);
+joinParts(gantryHalf, bottom, backJoin, [tm(0.3), cnf(0.6)]);
 
 {
   const railClearanceHeight = 15;
@@ -236,6 +241,7 @@ gantry.addAttachListener((parent, loc) => {
     roller,
     screwOrigin.rotate(0, 0, 180).translate(0, 0, -gantryPosition + 115),
   );
+  boltThreadedSubpartToFlatPart(gantryHalf, roller, outer, rollerHoleFinder);
 
   const secondSupport = gantryHalf.mirror(z3);
   const secondOuter = secondSupport.forkChild(outer);
@@ -285,7 +291,6 @@ gantry.addAttachListener((parent, loc) => {
     0,
     -transformPoint3(motorPlacement, zero3)[2],
   );
-  motorSupportPath.cut;
   const support = new FlatPart(
     `motor support`,
     woodThickness,
@@ -321,4 +326,29 @@ gantry.addAttachListener((parent, loc) => {
 
   fastenSubpartToFlatPart(gantry, nema23, support, motorHolesGetter);
   fastenSubpartToFlatPart(gantry, bk12, secondInner, bkfHoleFinder);
+
+  // end holder
+  const holderSize = 100;
+  const screwEndHolderPath = Path.makeRoundedRect(
+    holderSize,
+    holderSize,
+    roundingRadius,
+  ).translate([-holderSize, -holderSize / 2]);
+
+  const endHolder = new FlatPart(
+    `screw end holder`,
+    woodThickness,
+    screwEndHolderPath,
+  );
+
+  const shaftPlacement = gantry.findChild(
+    screwAssy.findChild(bf12).child,
+  ).placement;
+  gantryHalf.addChild(
+    endHolder,
+    shaftPlacement.multiply(a2m([-bf12Thickness / 2, 0, shaftY - woodThickness / 2], z3)),
+  );
+  trimFlatPartWithAnother(gantryHalf, endHolder, inner, true);
+  joinParts(gantryHalf, endHolder, inner, [new HornSlot(), cnf(0.5), new HornSlot(false)]);
+  fastenSubpartToFlatPartEdge(gantry, bf12, endHolder, bkfTwoHoleFinder);
 });

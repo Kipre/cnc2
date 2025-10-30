@@ -232,7 +232,7 @@ let screwPlacement;
     a2m([bk12Thickness / 2, 0, 0], x3),
   );
 
-  let bkSupportPath = makeShelfOnPlane(
+  const bkSupportPath = makeShelfOnPlane(
     bkSupportPlacement,
     woodThickness,
     locatedInnerTunnel,
@@ -247,6 +247,7 @@ let screwPlacement;
     defaultSpindleSize,
     3,
   );
+  
   bkSupportPath.insertFeature(bkSupportTenon, 2, {
     fromStart: screwShaftZ - joinOffset - woodThickness,
   });

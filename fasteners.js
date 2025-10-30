@@ -129,14 +129,23 @@ const cylinder = extrusion(
   Path.makeCircle(cylinderDiameter / 2),
 );
 
-const hole = extrusion(
+const m6hole = extrusion(
   a2m([0, 0, -cylinderDiameter]),
   cylinderDiameter * 2,
   Path.makeCircle(6 / 2),
 );
 
-export const cylinderNut = new Part("m6 cylinder nut", cut(cylinder, hole));
+const m5hole = extrusion(
+  a2m([0, 0, -cylinderDiameter]),
+  cylinderDiameter * 2,
+  Path.makeCircle(5 / 2),
+);
+
+export const cylinderNut = new Part("m6 cylinder nut", cut(cylinder, m6hole));
 cylinderNut.material = metalMaterial;
+
+export const m5CylinderNut = new Part("m5 cylinder nut", cut(cylinder, m5hole));
+m5CylinderNut.material = metalMaterial;
 
 /**
  * @param {"M3" | "M4" | "M5" | "M6" | "M8"} size
@@ -197,11 +206,11 @@ export const {washer: m6Washer, nut: m6Nut, bolt: m6Bolt} = getFastenerKit(6.3, 
 // export const m6Washer = makeWasher("M6");
 // export const m6Bolt = makeBolt("M6", 35);
 
-export const m6Fastener = new Assembly("fastener");
-m6Fastener.addChild(m6Bolt);
-m6Fastener.addChild(m6Washer);
-m6Fastener.addChild(cylinderNut, a2m([0, 0, 30]));
-m6Fastener.symmetries = [0, 0, NaN];
+export const m6BoltAndBarrelNut = new Assembly("fastener");
+m6BoltAndBarrelNut.addChild(m6Bolt);
+m6BoltAndBarrelNut.addChild(m6Washer);
+m6BoltAndBarrelNut.addChild(cylinderNut, a2m([0, 0, 30]));
+m6BoltAndBarrelNut.symmetries = [0, 0, NaN];
 
 export class CylinderNutFastener extends BaseSlot {
   /**
@@ -234,7 +243,7 @@ export class CylinderNutFastener extends BaseSlot {
     const barrelHole = this.nutHole.translate(center);
     part.addInsides(barrelHole);
 
-    return { path: this.boltHole, fastener: m6Fastener };
+    return { path: this.boltHole, fastener: m6BoltAndBarrelNut };
   }
 }
 

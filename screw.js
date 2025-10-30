@@ -4,20 +4,19 @@ import { ny3, x3, y2, zero2, zero3 } from "./cade/lib/defaults.js";
 import { spindleCleared2LineTo } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { blackMetalMaterial, metalMaterial } from "./cade/lib/materials.js";
-import { cut, extrusion, fuse, multiExtrusion } from "./cade/lib/operations.js";
+import { cut, extrusion, fuse, multiExtrusion, retrieveOperations } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
 import { makeFourDrills } from "./cade/lib/utils.js";
 import { minus } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
+import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m } from "./cade/tools/transform.js";
 import {
-  bfkSupportExtension,
   defaultSpindleSize,
-  screwCenter,
   screwCenterToSupport,
 } from "./dimensions.js";
 
-const bf12Thickness = 20;
+export const bf12Thickness = 20;
 export const bk12Thickness = 25;
 export const bkf12Height = 43;
 export const bfk12Width = 60;
@@ -27,7 +26,7 @@ const holeOffset = 7;
 const bkTopHoleOffset = 13 / 2;
 const sideHoleDiameter = 5.5;
 const topHoleDiameter = 6.6;
-const shaftY = 18 + holeOffset;
+export const shaftY = 18 + holeOffset;
 const shaftHoleDiameter = 20;
 
 console.assert(shaftY === screwCenterToSupport);
@@ -50,7 +49,7 @@ supportProfile.mirror();
 
 const sideHoles = [];
 for (const xSign of [1, -1]) {
-  for (const y of [holeOffset, bkf12Height - indentDepth - holeOffset]) {
+  for (const y of [holeOffset, shaftY]) {
     const x = bfk12Width / 2 - holeOffset;
     sideHoles.push(
       Path.makeCircle(sideHoleDiameter / 2).translate([xSign * x, y]),
@@ -128,6 +127,13 @@ export function* bkfHoleFinder(part) {
     yield { hole: path, depth, transform };
   }
 }
+export function * bkfTwoHoleFinder(part) {
+  const it = bkfHoleFinder(part);
+  it.next();
+  yield it.next().value;
+  it.next();
+  yield it.next().value;
+}
 
 function makeScrewAssembly(length) {
   const distance = length - 51;
@@ -197,6 +203,12 @@ const drills = makeFourDrills(
   rollerThreadDepth,
   rollerCenterToHole,
 );
+
+export function* rollerHoleFinder() {
+  for (const op of retrieveOperations(drills).slice(0, -1)) {
+    yield { hole: op.outsides[0], depth: rollerThreadDepth, transform: op.placement };
+  }
+}
 
 const ballScrewPlate = extrusion(
   a2m([0, 0, rollerLength]),
