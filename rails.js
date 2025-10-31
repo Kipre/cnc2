@@ -236,7 +236,7 @@ export function fastenSubpartToFlatPartEdge(
       part.addInsides(locatedPath);
 
       const top = partPlacement.multiply(a2m(holeStart, nx3));
-      const bottom = top.multiply(a2m([0, 0, depth + cylinderNutOffset], x3));
+      const bottom = top.multiply(a2m([0, 0, depth + cylinderNutOffset], z3, y3));
 
       subpart.pairings.push({ ...parent.addChild(bolt, top), parent });
       subpart.pairings.push({ ...parent.addChild(washer, top), parent });

@@ -1,7 +1,7 @@
 // @ts-check
 
 export const yRailLength = 1000;
-const zRailLength = 350;
+export const zRailLength = 350;
 
 export const woodThickness = 15;
 export const carrierWheelbase = 200;
@@ -57,4 +57,5 @@ export const bfkSupportExtension = woodThickness - 1;
 export const aluExtrusionHeight = 149;
 export const aluExtrusionThickness = 30;
 
-export const gantryPosition = 450;
+export const gantryPosition = 750;
+export const xPosition = 450;
