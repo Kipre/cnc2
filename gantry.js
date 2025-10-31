@@ -154,10 +154,7 @@ gantry.addChild(screwAssy, screwPlacement);
 }
 
 const toExtrusionFront = aluExtrusionThickness + extrusionOffset;
-gantry.addChild(
-  aluExtrusion,
-  a2m([-toExtrusionFront, gantrySinking, 0]),
-);
+gantry.addChild(aluExtrusion, a2m([-toExtrusionFront, gantrySinking, 0]));
 
 const layout = [cnf(0.8), tm(0.5), cnf(0.1)];
 
@@ -330,7 +327,7 @@ gantry.addAttachListener((parent, loc) => {
   fastenSubpartToFlatPart(gantry, bk12, secondInner, bkfHoleFinder);
 
   // end holder
-  const holderSize = 100;
+  const holderSize = 80;
   const screwEndHolderPath = Path.makeRoundedRect(
     holderSize,
     holderSize,
@@ -348,12 +345,40 @@ gantry.addAttachListener((parent, loc) => {
   ).placement;
   gantryHalf.addChild(
     endHolder,
-    shaftPlacement.multiply(a2m([-bf12Thickness / 2, 0, shaftY - woodThickness / 2], z3)),
+    shaftPlacement.multiply(
+      a2m([-bf12Thickness / 2, 0, shaftY - woodThickness / 2], z3),
+    ),
   );
+  trimFlatPartWithAnother(gantryHalf, endHolder, inner, true);
+  joinParts(gantryHalf, endHolder, inner, [
+    new HornSlot(),
+    cnf(0.5),
+    new HornSlot(false),
+  ]);
   fastenSubpartToFlatPartEdge(gantry, bf12, endHolder, bkfTwoHoleFinder);
 });
 
 gantry.addChild(tower, a2m([0, 0, xPosition]), true);
 
-gantry.addChild(flatRail, a2m([-toExtrusionFront, aluExtrusionThickness / 2 + gantrySinking, 0], z3, y3), true);
-gantry.addChild(flatRail, a2m([-toExtrusionFront, aluExtrusionHeight - aluExtrusionThickness / 2 + gantrySinking, 0], z3, y3), true);
+gantry.addChild(
+  flatRail,
+  a2m(
+    [-toExtrusionFront, aluExtrusionThickness / 2 + gantrySinking, 0],
+    z3,
+    y3,
+  ),
+  true,
+);
+gantry.addChild(
+  flatRail,
+  a2m(
+    [
+      -toExtrusionFront,
+      aluExtrusionHeight - aluExtrusionThickness / 2 + gantrySinking,
+      0,
+    ],
+    z3,
+    y3,
+  ),
+  true,
+);
