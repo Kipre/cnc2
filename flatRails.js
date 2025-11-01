@@ -1,24 +1,22 @@
 // @ts-check
 
-import { ny3, nz3, y2, zero2 } from "./cade/lib/defaults.js";
+import { ny3, nz3, x3, y2, y3, zero2 } from "./cade/lib/defaults.js";
 import { metalMaterial } from "./cade/lib/materials.js";
-import {
-  cut,
-  extrusion,
-  fuse,
-} from "./cade/lib/operations.js";
+import { cut, extrusion, fuse } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
+import { plus3 } from "./cade/tools/3d.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m } from "./cade/tools/transform.js";
 
 const railWidth = 12;
-const totalHeight = 13;
+export const flatRailTotalHeight = 13;
 const railHeight = 8;
 const railSlotSize = 1.5;
 const smallDiameter = 3.5;
 const bigDiameter = 6;
 const holeDepth = railHeight - 4.5;
+const chariotToBottom = 3;
 
 const railProfile = new Path();
 railProfile.moveTo([railWidth / 2, 0]);
@@ -47,3 +45,49 @@ export const flatRail = new Part(
   cut(extrusion(a2m([0, 0, 0]), 1000, railProfile), ...holes),
 );
 flatRail.material = metalMaterial;
+
+const thickenedRailProfile = railProfile.offset(-1);
+export const flatChariotWidth = 27;
+
+const flatChariotProfile = Path.makeRect(
+  flatChariotWidth,
+  flatRailTotalHeight - chariotToBottom,
+)
+  .recenter({ onlyX: true })
+  .translate([0, chariotToBottom])
+  .booleanDifference(thickenedRailProfile);
+
+export const flatChariotLength = 45.4;
+const drillDepth = 8;
+const drill = extrusion(
+  a2m([0, -drillDepth, 0]),
+  2 * drillDepth,
+  Path.makeCircle(3 / 2),
+);
+const chariotHoles = [];
+const center = [0, flatRailTotalHeight, flatChariotLength / 2];
+for (const x of [-10, 10]) {
+  for (const y of [-10, 10]) {
+    chariotHoles.push({
+      placement: a2m(plus3(center, [x, 0, y]), y3),
+      shape: drill,
+    });
+  }
+}
+
+export function* flatChariotHolesIterator() {
+  for (const op of chariotHoles) {
+    yield {
+      hole: drill.retreive().outsides[0],
+      // TODO check bolt length
+      depth: drillDepth,
+      transform: op.placement,
+    };
+  }
+}
+
+export const flatChariot = new Part(
+  "flat chariot",
+  cut(extrusion(a2m(), flatChariotLength, flatChariotProfile), ...chariotHoles),
+);
+flatChariot.material = metalMaterial;

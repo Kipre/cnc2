@@ -1,6 +1,10 @@
 // @ts-check
 
-import { aluEndHolesIterator, aluExtrusion, aluStartHolesIterator } from "./aluminumExtrusion.js";
+import {
+  aluEndHolesIterator,
+  aluExtrusion,
+  aluStartHolesIterator,
+} from "./aluminumExtrusion.js";
 import { nx3, nz3, x3, y2, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
 import {
   FlatPart,
@@ -20,6 +24,7 @@ import {
   aluExtrusionThickness,
   carrierWheelbase,
   gantryPosition,
+  interFlatRail,
   joinOffset,
   openArea,
   roundingRadius,
@@ -32,7 +37,7 @@ import {
   xRailSupportWidth,
 } from "./dimensions.js";
 import { CylinderNutFastener } from "./fasteners.js";
-import { flatRail } from "./flatRails.js";
+import { flatChariot, flatRail, flatRailTotalHeight } from "./flatRails.js";
 import {
   motorCenteringHole,
   motorHolesGetter,
@@ -65,7 +70,7 @@ import {
   screwAssy,
   shaftY,
 } from "./screw.js";
-import { tower } from "./tower.js";
+import { tower, towerBottomToRail } from "./tower.js";
 
 const height = aluExtrusionHeight;
 const width = carrierWheelbase;
@@ -173,10 +178,12 @@ const aluBoltClearance = Path.makeRoundedRect(
   aluExtrusionThickness,
   2 * (woodThickness + 10),
   roundingRadius,
-).recenter({onlyY: true});
+).recenter({ onlyY: true });
 
 bottom.assignOutsidePath(
-  bottom.outside.booleanDifference(aluBoltClearance.translate(aluExtrusionCenterOnBottom)),
+  bottom.outside.booleanDifference(
+    aluBoltClearance.translate(aluExtrusionCenterOnBottom),
+  ),
 );
 
 function makeGantryJoin(name, start, end, offset = 0) {
@@ -373,24 +380,36 @@ gantry.addAttachListener((parent, loc) => {
   ]);
   fastenSubpartToFlatPartEdge(gantry, bf12, endHolder, bkfTwoHoleFinder);
 
-  boltThreadedSubpartToFlatPart(gantry, aluExtrusion, inner, aluStartHolesIterator);
-  boltThreadedSubpartToFlatPart(gantry, aluExtrusion, secondInner, aluEndHolesIterator);
+  boltThreadedSubpartToFlatPart(
+    gantry,
+    aluExtrusion,
+    inner,
+    aluStartHolesIterator,
+  );
+  boltThreadedSubpartToFlatPart(
+    gantry,
+    aluExtrusion,
+    secondInner,
+    aluEndHolesIterator,
+  );
 });
 
-gantry.addChild(tower, a2m([0, 0, xPosition]), true);
+gantry.addChild(tower, a2m(
+[-90 - 1 - flatRailTotalHeight, gantrySinking, xPosition],
+  // [0, 0, xPosition]
+), true);
 
 const railOrigin = [
   // 1 for the washer
   -toExtrusionFront - 1,
   aluExtrusionThickness / 2 + gantrySinking,
   0,
-]
+];
 const railPlacement = a2m(railOrigin, z3, y3);
 gantry.addChild(flatRail, railPlacement, true);
 gantry.addChild(
   flatRail,
-  railPlacement.multiply(
-    a2m([aluExtrusionHeight - aluExtrusionThickness, 0, 0]),
-  ),
+  railPlacement.multiply(a2m([interFlatRail, 0, 0])),
   true,
 );
+
