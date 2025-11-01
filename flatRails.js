@@ -31,7 +31,6 @@ railProfile.lineTo([railWidth / 2, railHeight / 2 + 2 * railSlotSize]);
 railProfile.lineTo([railWidth / 2, railHeight]);
 railProfile.mirror(zero2, y2);
 railProfile.close();
-debugGeometry(railProfile);
 
 const hole = fuse(
   extrusion(a2m([0, 0, -holeDepth], nz3), 10, Path.makeCircle(bigDiameter / 2)),

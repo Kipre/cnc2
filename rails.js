@@ -153,8 +153,18 @@ export function boltThreadedSubpartToFlatPart(
       const center = [...placeAlong(p1, p2, { fraction: 0.5 }), 0];
       const holeToSubToPart = subToPart.multiply(holeTransform);
 
-      const holeOnPart = proj2d(transformPoint3(holeToSubToPart, center));
+      const holeInPart = transformPoint3(holeToSubToPart, center);
+      const holeOnPart = proj2d(holeInPart);
       const requiredClampingLength = depth + part.thickness;
+
+      const zee = holeInPart[2];
+
+      if (Math.abs(zee) > requiredClampingLength) {
+        console.error(
+          `cannot fasten ${subpart.name} to ${part.name} because they are to far apart for hole ${holeInPart}`,
+        );
+        continue;
+      }
 
       const { bolt, washer } = getFastenerKit(
         diameter,
@@ -166,8 +176,12 @@ export function boltThreadedSubpartToFlatPart(
       const locatedPath = Path.makeCircle(diameter / 2).translate(holeOnPart);
       part.addInsides(locatedPath);
 
+      const onTheOtherSide = Math.abs(zee - part.thickness) < eps;
       const fastenerLocation = partPlacement.multiply(
-        a2m([...holeOnPart, 0], nz3),
+        a2m(
+          [...holeOnPart, onTheOtherSide ? zee : 0],
+          onTheOtherSide ? z3 : nz3,
+        ),
       );
       const topLocation = fastenerLocation.multiply(
         a2m([0, 0, -part.thickness]),
@@ -236,7 +250,9 @@ export function fastenSubpartToFlatPartEdge(
       part.addInsides(locatedPath);
 
       const top = partPlacement.multiply(a2m(holeStart, nx3));
-      const bottom = top.multiply(a2m([0, 0, depth + cylinderNutOffset], z3, y3));
+      const bottom = top.multiply(
+        a2m([0, 0, depth + cylinderNutOffset], z3, y3),
+      );
 
       subpart.pairings.push({ ...parent.addChild(bolt, top), parent });
       subpart.pairings.push({ ...parent.addChild(washer, top), parent });

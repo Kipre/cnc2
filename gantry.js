@@ -1,6 +1,6 @@
 // @ts-check
 
-import { aluExtrusion } from "./aluminumExtrusion.js";
+import { aluEndHolesIterator, aluExtrusion, aluStartHolesIterator } from "./aluminumExtrusion.js";
 import { nx3, nz3, x3, y2, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
 import {
   FlatPart,
@@ -13,6 +13,7 @@ import { HornSlot, TenonMortise } from "./cade/lib/slots.js";
 import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { placeAlong, plus } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
+import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import {
   aluExtrusionHeight,
@@ -160,8 +161,23 @@ const layout = [cnf(0.8), tm(0.5), cnf(0.1)];
 
 const centeredBolt = [cnf(0.5)];
 
-joinParts(gantryHalf, bottom, inner, layout);
+joinParts(gantryHalf, bottom, inner, [cnf(0.8), tm(0.65), cnf(0.1)]);
 joinParts(gantryHalf, bottom, outer, layout);
+
+const aluExtrusionCenterOnBottom = locateOriginOnFlatPart(
+  gantry,
+  bottom,
+  aluExtrusion,
+);
+const aluBoltClearance = Path.makeRoundedRect(
+  aluExtrusionThickness,
+  2 * (woodThickness + 10),
+  roundingRadius,
+).recenter({onlyY: true});
+
+bottom.assignOutsidePath(
+  bottom.outside.booleanDifference(aluBoltClearance.translate(aluExtrusionCenterOnBottom)),
+);
 
 function makeGantryJoin(name, start, end, offset = 0) {
   const p1 = [...start, -joinOffset];
@@ -356,29 +372,25 @@ gantry.addAttachListener((parent, loc) => {
     new HornSlot(false),
   ]);
   fastenSubpartToFlatPartEdge(gantry, bf12, endHolder, bkfTwoHoleFinder);
+
+  boltThreadedSubpartToFlatPart(gantry, aluExtrusion, inner, aluStartHolesIterator);
+  boltThreadedSubpartToFlatPart(gantry, aluExtrusion, secondInner, aluEndHolesIterator);
 });
 
 gantry.addChild(tower, a2m([0, 0, xPosition]), true);
 
+const railOrigin = [
+  // 1 for the washer
+  -toExtrusionFront - 1,
+  aluExtrusionThickness / 2 + gantrySinking,
+  0,
+]
+const railPlacement = a2m(railOrigin, z3, y3);
+gantry.addChild(flatRail, railPlacement, true);
 gantry.addChild(
   flatRail,
-  a2m(
-    [-toExtrusionFront, aluExtrusionThickness / 2 + gantrySinking, 0],
-    z3,
-    y3,
-  ),
-  true,
-);
-gantry.addChild(
-  flatRail,
-  a2m(
-    [
-      -toExtrusionFront,
-      aluExtrusionHeight - aluExtrusionThickness / 2 + gantrySinking,
-      0,
-    ],
-    z3,
-    y3,
+  railPlacement.multiply(
+    a2m([aluExtrusionHeight - aluExtrusionThickness, 0, 0]),
   ),
   true,
 );
