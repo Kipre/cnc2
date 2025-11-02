@@ -16,6 +16,7 @@ import { eps, norm, placeAlong, rotatePoint } from "./cade/tools/2d.js";
 import { proj2d } from "./cade/tools/3d.js";
 import { intersectLineAndArc } from "./cade/tools/circle.js";
 import { Path } from "./cade/tools/path.js";
+import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import { defaultSpindleSize, yRailLength } from "./dimensions.js";
 import { getFastenerKit, m5CylinderNut } from "./fasteners.js";
@@ -161,7 +162,7 @@ export function boltThreadedSubpartToFlatPart(
 
       if (Math.abs(zee) > requiredClampingLength) {
         console.error(
-          `cannot fasten ${subpart.name} to ${part.name} because they are to far apart for hole ${holeInPart}`,
+          `cannot fasten ${subpart.name} to ${part.name} because they are too far apart for hole ${holeInPart}`,
         );
         continue;
       }
@@ -325,3 +326,5 @@ export const chariot = new Part(
 );
 chariot.material = metalMaterial;
 chariot.symmetries = [0, NaN, NaN];
+
+export const chariotContactSurface = a2m([0, chariotTop + railCenter , 0], y3);

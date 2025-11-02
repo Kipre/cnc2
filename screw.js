@@ -228,3 +228,5 @@ export const roller = new Part(
 );
 roller.material = metalMaterial;
 roller.symmetries = [0, NaN, NaN];
+
+export const rollerContactSurface = a2m([0, -rollerThickness /2, rollerLength / 2], ny3);

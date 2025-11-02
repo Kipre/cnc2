@@ -31,12 +31,13 @@ export const towerBottomToRail =  woodThickness;
 export const tower = new Assembly("tower");
 // tower.addChild(towerPlate, a2m([-90 - 1 - flatRailTotalHeight, -50, 0], nx3, z3));
 tower.addChild(towerPlate, a2m(zero3, nx3, z3));
+
 for (const x of [0, carrierWheelbase - flatChariotLength]) {
   for (const y of [0, interFlatRail]) {
     tower.addChild(
       flatChariot,
       a2m(
-        [flatRailTotalHeight, towerBottomToRail + y, x],
+        [flatRailTotalHeight, 50 + flatChariotWidth / 2 + y, x],
         z3,
         y3,
       ),

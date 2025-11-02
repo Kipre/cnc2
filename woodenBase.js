@@ -41,6 +41,7 @@ import {
   woodThickness,
   xRailSupportWidth,
   yRailEndSpace,
+  yRailPlacementOnTunnel,
 } from "./dimensions.js";
 import { CylinderNutFastener, defaultSlotLayout } from "./fasteners.js";
 import { motorHolesGetter, motorWithCoupler, nema23 } from "./motor.js";
@@ -247,7 +248,7 @@ let screwPlacement;
     defaultSpindleSize,
     3,
   );
-  
+
   bkSupportPath.insertFeature(bkSupportTenon, 2, {
     fromStart: screwShaftZ - joinOffset - woodThickness,
   });
@@ -301,7 +302,7 @@ export const yRailPlacement = a2m(
   [
     joinWidth + woodThickness + yRailEndSpace,
     openArea.z - joinOffset,
-    -joinWidth / 2 - woodThickness / 2,
+    -yRailPlacementOnTunnel,
   ],
   x3,
   nz3,

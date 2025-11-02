@@ -14,7 +14,7 @@ import {
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { HornSlot, TenonMortise } from "./cade/lib/slots.js";
-import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
+import { axesArrows, locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { placeAlong, plus } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
@@ -35,6 +35,7 @@ import {
   woodThickness,
   xPosition,
   xRailSupportWidth,
+  yRailPlacementOnTunnel,
 } from "./dimensions.js";
 import { CylinderNutFastener } from "./fasteners.js";
 import { flatChariot, flatRail, flatRailTotalHeight } from "./flatRails.js";
@@ -48,6 +49,7 @@ import {
   boltThreadedSubpartToFlatPart,
   chariot,
   chariotBoltClearingRect,
+  chariotContactSurface,
   chariotHoleFinder,
   chariotLength,
   fastenSubpartToFlatPart,
@@ -66,6 +68,7 @@ import {
   bkPlateCutout,
   roller,
   rollerCenterToHole,
+  rollerContactSurface,
   rollerHoleFinder,
   screwAssy,
   shaftY,
@@ -133,7 +136,8 @@ export const gantryHalf = new Assembly("gantry half");
 const innerLocation = a2m([0, gantrySinking, 0], nz3, nx3);
 const locatedInner = gantryHalf.addChild(inner, innerLocation);
 
-gantryHalf.addChild(bottom, a2m([-carrierWheelbase, 0, -woodThickness], y3));
+const bottomPlacement = a2m([-carrierWheelbase, 0, -woodThickness], y3);
+gantryHalf.addChild(bottom, bottomPlacement);
 const locatedOuter = gantryHalf.addChild(
   outer,
   a2m([0, gantrySinking, -gantrySupportWidth - woodThickness], nz3, nx3),
@@ -238,166 +242,147 @@ joinParts(gantryHalf, bottom, backJoin, [tm(0.3), cnf(0.6)]);
   });
 }
 
-gantry.addAttachListener((parent, loc) => {
-  const { placement } = parent.findChild(yRail);
-  const railOrigin = loc.inverse().multiply(placement);
-  // TODO 93...
-  const chariotPlacement = railOrigin.translate(
-    0,
-    0,
-    gantryPosition + 93 - carrierWheelbase,
-  );
-  gantryHalf.addChild(chariot, chariotPlacement);
-  gantryHalf.addChild(
-    chariot,
-    chariotPlacement.translate(0, 0, -carrierWheelbase + chariotLength),
-  );
+const chariotPlacement = bottomPlacement
+  .multiply(chariotContactSurface.rotate(-90).inverse())
+  .translate(yRailPlacementOnTunnel);
 
-  boltThreadedSubpartToFlatPart(gantryHalf, chariot, bottom, chariotHoleFinder);
+gantryHalf.addChild(chariot, chariotPlacement);
+gantryHalf.addChild(
+  chariot,
+  chariotPlacement.translate(0, 0, carrierWheelbase - chariotLength),
+);
 
-  const screwOrigin = loc
-    .inverse()
-    .multiply(parent.findChild(screwAssy.children.at(-1).child).placement);
+boltThreadedSubpartToFlatPart(gantryHalf, chariot, bottom, chariotHoleFinder);
 
-  gantryHalf.addChild(
-    roller,
-    screwOrigin.rotate(0, 0, 180).translate(0, 0, -gantryPosition + 115),
-  );
-  boltThreadedSubpartToFlatPart(gantryHalf, roller, outer, rollerHoleFinder);
+const rollerPlacement = locatedOuter.placement
+  .translate(...rollerCenter)
+  .multiply(rollerContactSurface.rotate(90).inverse());
 
-  const secondSupport = gantryHalf.mirror(z3);
-  const secondOuter = secondSupport.forkChild(outer);
-  const secondBackJoin = secondSupport.forkChild(backJoin);
-  const secondInner = secondSupport.forkChild(inner);
-  const secondBottom = secondSupport.forkChild(bottom);
-  const secondAngled = secondSupport.forkChild(angledJoin);
+gantryHalf.addChild(roller, rollerPlacement);
+boltThreadedSubpartToFlatPart(gantryHalf, roller, outer, rollerHoleFinder);
 
-  const secondSupportPlace = a2m([0, 0, openArea.x]);
-  gantry.addChild(secondSupport, secondSupportPlace);
+const secondSupport = gantryHalf.mirror(z3);
+const secondOuter = secondSupport.forkChild(outer);
+const secondBackJoin = secondSupport.forkChild(backJoin);
+const secondInner = secondSupport.forkChild(inner);
+const secondBottom = secondSupport.forkChild(bottom);
+const secondAngled = secondSupport.forkChild(angledJoin);
 
-  const shaftOnInner = locateOriginOnFlatPart(
-    gantry,
-    secondInner,
-    screwAssy.children.at(-1).child,
-  );
+const secondSupportPlace = a2m([0, 0, openArea.x]);
+gantry.addChild(secondSupport, secondSupportPlace);
 
-  secondOuter.assignOutsidePath(
-    secondOuter.outside.booleanDifference(
-      motorSideClearance.translate(shaftOnInner),
-    ),
-  );
+const shaftOnInner = locateOriginOnFlatPart(
+  gantry,
+  secondInner,
+  screwAssy.children.at(-1).child,
+);
 
-  joinParts(gantryHalf, outer, backJoin, layout);
+secondOuter.assignOutsidePath(
+  secondOuter.outside.booleanDifference(
+    motorSideClearance.translate(shaftOnInner),
+  ),
+);
 
-  joinParts(
-    secondSupport,
-    secondOuter,
-    secondBackJoin,
-    centeredBolt,
-    centeredBolt,
-  );
+joinParts(gantryHalf, outer, backJoin, layout);
 
-  secondInner.addInsides(bkPlateCutout.translate(shaftOnInner));
+joinParts(
+  secondSupport,
+  secondOuter,
+  secondBackJoin,
+  centeredBolt,
+  centeredBolt,
+);
 
-  const motorInGantry = gantry.findChild(
-    screwAssy.findChild(nema23).child,
-  ).placement;
+secondInner.addInsides(bkPlateCutout.translate(shaftOnInner));
 
-  const motorPlacement = secondSupportPlace
-    .inverse()
-    .multiply(motorInGantry)
-    .multiply(a2m(zero3, nz3));
+const motorInGantry = gantry.findChild(
+  screwAssy.findChild(nema23).child,
+).placement;
 
-  const motorSupportPlacement = innerLocation.translate(
-    0,
-    0,
-    -transformPoint3(motorPlacement, zero3)[2],
-  );
-  const support = new FlatPart(
-    `motor support`,
-    woodThickness,
-    motorSupportPath,
-  );
-  secondSupport.addChild(support, motorSupportPlacement);
+const motorPlacement = secondSupportPlace
+  .inverse()
+  .multiply(motorInGantry)
+  .multiply(a2m(zero3, nz3));
 
-  trimFlatPartWithAnother(secondSupport, support, secondBottom);
-  const allowableWidth = carrierWheelbase - chariotLength;
-  support.assignOutsidePath(
-    support.outside.cutOnLine([allowableWidth, 0], [allowableWidth, 1], true),
-  );
+const motorSupportPlacement = innerLocation.translate(
+  0,
+  0,
+  -transformPoint3(motorPlacement, zero3)[2],
+);
+const support = new FlatPart(`motor support`, woodThickness, motorSupportPath);
+secondSupport.addChild(support, motorSupportPlacement);
 
-  const [origin] = support.outside.bbox().extrema();
-  support.assignOutsidePath(
-    support.outside.booleanDifference(
-      chariotBoltClearingRect.translate(origin),
-    ),
-  );
+trimFlatPartWithAnother(secondSupport, support, secondBottom);
+const allowableWidth = carrierWheelbase - chariotLength;
+support.assignOutsidePath(
+  support.outside.cutOnLine([allowableWidth, 0], [allowableWidth, 1], true),
+);
 
-  const tenonAndBolt = [tm(0.3), cnf(0.8)];
+const [origin] = support.outside.bbox().extrema();
+support.assignOutsidePath(
+  support.outside.booleanDifference(chariotBoltClearingRect.translate(origin)),
+);
 
-  joinParts(secondSupport, support, secondBottom, [tm(0.5)]);
-  joinParts(secondSupport, support, secondBackJoin, tenonAndBolt);
-  joinParts(secondSupport, support, secondAngled, tenonAndBolt);
+const tenonAndBolt = [tm(0.3), cnf(0.8)];
 
-  const motorCenterOnSupport = locateOriginOnFlatPart(
-    gantry,
-    support,
-    screwAssy.findChild(nema23).child,
-  );
-  support.addInsides(motorCenteringHole.translate(motorCenterOnSupport));
+joinParts(secondSupport, support, secondBottom, [tm(0.5)]);
+joinParts(secondSupport, support, secondBackJoin, tenonAndBolt);
+joinParts(secondSupport, support, secondAngled, tenonAndBolt);
 
-  fastenSubpartToFlatPart(gantry, nema23, support, motorHolesGetter);
-  fastenSubpartToFlatPart(gantry, bk12, secondInner, bkfHoleFinder);
+const motorCenterOnSupport = locateOriginOnFlatPart(
+  gantry,
+  support,
+  screwAssy.findChild(nema23).child,
+);
+support.addInsides(motorCenteringHole.translate(motorCenterOnSupport));
 
-  // end holder
-  const holderSize = 80;
-  const screwEndHolderPath = Path.makeRoundedRect(
-    holderSize,
-    holderSize,
-    roundingRadius,
-  ).translate([-holderSize, -holderSize / 2]);
+fastenSubpartToFlatPart(gantry, nema23, support, motorHolesGetter);
+fastenSubpartToFlatPart(gantry, bk12, secondInner, bkfHoleFinder);
 
-  const endHolder = new FlatPart(
-    `screw end holder`,
-    woodThickness,
-    screwEndHolderPath,
-  );
+// end holder
+const holderSize = 80;
+const screwEndHolderPath = Path.makeRoundedRect(
+  holderSize,
+  holderSize,
+  roundingRadius,
+).translate([-holderSize, -holderSize / 2]);
 
-  const shaftPlacement = gantry.findChild(
-    screwAssy.findChild(bf12).child,
-  ).placement;
-  gantryHalf.addChild(
-    endHolder,
-    shaftPlacement.multiply(
-      a2m([-bf12Thickness / 2, 0, shaftY - woodThickness / 2], z3),
-    ),
-  );
-  trimFlatPartWithAnother(gantryHalf, endHolder, inner, true);
-  joinParts(gantryHalf, endHolder, inner, [
-    new HornSlot(),
-    cnf(0.5),
-    new HornSlot(false),
-  ]);
-  fastenSubpartToFlatPartEdge(gantry, bf12, endHolder, bkfTwoHoleFinder);
+const endHolder = new FlatPart(
+  `screw end holder`,
+  woodThickness,
+  screwEndHolderPath,
+);
 
-  boltThreadedSubpartToFlatPart(
-    gantry,
-    aluExtrusion,
-    inner,
-    aluStartHolesIterator,
-  );
-  boltThreadedSubpartToFlatPart(
-    gantry,
-    aluExtrusion,
-    secondInner,
-    aluEndHolesIterator,
-  );
-});
+const shaftPlacement = gantry.findChild(
+  screwAssy.findChild(bf12).child,
+).placement;
+gantryHalf.addChild(
+  endHolder,
+  shaftPlacement.multiply(
+    a2m([-bf12Thickness / 2, 0, shaftY - woodThickness / 2], z3),
+  ),
+);
+trimFlatPartWithAnother(gantryHalf, endHolder, inner, true);
+joinParts(gantryHalf, endHolder, inner, [
+  new HornSlot(),
+  cnf(0.5),
+  new HornSlot(false),
+]);
+fastenSubpartToFlatPartEdge(gantry, bf12, endHolder, bkfTwoHoleFinder);
 
-gantry.addChild(tower, a2m(
-[-90 - 1 - flatRailTotalHeight, gantrySinking, xPosition],
-  // [0, 0, xPosition]
-), true);
+boltThreadedSubpartToFlatPart(
+  gantry,
+  aluExtrusion,
+  inner,
+  aluStartHolesIterator,
+);
+boltThreadedSubpartToFlatPart(
+  gantry,
+  aluExtrusion,
+  secondInner,
+  aluEndHolesIterator,
+);
+// });
 
 const railOrigin = [
   // 1 for the washer
@@ -413,3 +398,8 @@ gantry.addChild(
   true,
 );
 
+const towerPlacement = gantry
+  .findChild(flatRail)
+  .placement.multiply(tower.findChild(flatChariot).placement.inverse());
+
+gantry.addChild(tower, towerPlacement.translate(0,0, xPosition));
