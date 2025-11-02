@@ -165,7 +165,7 @@ export const screwAssy = makeScrewAssembly(1000);
 export const screwShaftPlacement = a2m([1000, 0, shaftY]);
 
 const rollerLength = 40;
-const rollerThickness = 40;
+export const rollerThickness = 40;
 const rollerWidth = 52;
 
 // TODO: check this
@@ -229,4 +229,4 @@ export const roller = new Part(
 roller.material = metalMaterial;
 roller.symmetries = [0, NaN, NaN];
 
-export const rollerContactSurface = a2m([0, -rollerThickness /2, rollerLength / 2], ny3);
+export const rollerContactSurface = a2m([0, -rollerThickness /2, rollerWidth / 2], ny3);

@@ -5,6 +5,7 @@ import {
   aluExtrusion,
   aluStartHolesIterator,
 } from "./aluminumExtrusion.js";
+import { flatRailPlacementInGantry, screwPlacementInGantry, toExtrusionFront } from "./assemblyInvariants.js";
 import { nx3, nz3, x3, y2, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
 import {
   FlatPart,
@@ -21,6 +22,7 @@ import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import {
   aluExtrusionHeight,
+  aluExtrusionOffsetInGantry,
   aluExtrusionThickness,
   carrierWheelbase,
   gantryPosition,
@@ -79,7 +81,6 @@ const height = aluExtrusionHeight;
 const width = carrierWheelbase;
 const gapFromTunnel = 10 + joinOffset;
 const angleFillet = 150;
-const screwZ = 10;
 
 const tm = (x) => new TenonMortise(x);
 const cnf = (x) => new CylinderNutFastener(x);
@@ -130,7 +131,6 @@ export const bottom = new FlatPart(
 );
 
 const gantrySinking = -railTopToBottom + gapFromTunnel;
-const extrusionOffset = 60;
 
 export const gantryHalf = new Assembly("gantry half");
 const innerLocation = a2m([0, gantrySinking, 0], nz3, nx3);
@@ -145,26 +145,16 @@ const locatedOuter = gantryHalf.addChild(
 
 export const gantry = new Assembly("gantry");
 gantry.addChild(gantryHalf);
-const screwPlacement = a2m(
-  [-extrusionOffset, bfk12Width / 2 + woodThickness + screwZ, 26],
-  x3,
-  z3,
-);
-gantry.addChild(screwAssy, screwPlacement);
 
-{
-  const screwOrigin = gantry.findChild(
-    screwAssy.children.at(-1).child,
-  ).placement;
-
-  gantry.addChild(
-    roller,
-    screwOrigin.rotate(0, 0, 180).translate(0, 0, -gantryPosition + 115),
-  );
-}
-
-const toExtrusionFront = aluExtrusionThickness + extrusionOffset;
 gantry.addChild(aluExtrusion, a2m([-toExtrusionFront, gantrySinking, 0]));
+
+gantry.addChild(flatRail, flatRailPlacementInGantry);
+gantry.addChild(
+  flatRail,
+  flatRailPlacementInGantry.translate(interFlatRail),
+);
+
+gantry.addChild(screwAssy, screwPlacementInGantry);
 
 const layout = [cnf(0.8), tm(0.5), cnf(0.1)];
 
@@ -382,24 +372,9 @@ boltThreadedSubpartToFlatPart(
   secondInner,
   aluEndHolesIterator,
 );
-// });
-
-const railOrigin = [
-  // 1 for the washer
-  -toExtrusionFront - 1,
-  aluExtrusionThickness / 2 + gantrySinking,
-  0,
-];
-const railPlacement = a2m(railOrigin, z3, y3);
-gantry.addChild(flatRail, railPlacement, true);
-gantry.addChild(
-  flatRail,
-  railPlacement.multiply(a2m([interFlatRail, 0, 0])),
-  true,
-);
 
 const towerPlacement = gantry
   .findChild(flatRail)
   .placement.multiply(tower.findChild(flatChariot).placement.inverse());
 
-gantry.addChild(tower, towerPlacement.translate(0,0, xPosition));
+gantry.addChild(tower, towerPlacement.translate(0, 0, xPosition));

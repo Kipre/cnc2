@@ -7,7 +7,7 @@ import { Assembly } from "./cade/lib/lib.js";
 import { metalMaterial } from "./cade/lib/materials.js";
 import { cut, extrusion, fuse } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
-import { BaseSlot, TenonMortise } from "./cade/lib/slots.js";
+import { BaseSlot, CenterDrawerSlot, TenonMortise } from "./cade/lib/slots.js";
 import { minus, placeAlong, rotatePoint } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m } from "./cade/tools/transform.js";
@@ -243,6 +243,28 @@ export class CylinderNutFastener extends BaseSlot {
     const barrelHole = this.nutHole.translate(center);
     part.addInsides(barrelHole);
 
+    return { path: this.boltHole, fastener: m6BoltAndBarrelNut };
+  }
+}
+
+export class InvertedCylinderNut extends CenterDrawerSlot {
+  /**
+   * @param {number} x
+   */
+  constructor(...args) {
+    super(...args);
+    this.fastener = new CylinderNutFastener(x);
+  }
+
+  /**
+   * @param {FlatPart} part
+   * @param {number} segmentIdx
+   * @param {types.Point} location
+   * @param {types.Point} vector
+   */
+  materialize(part, segmentIdx, location, vector) {
+    const result = super.materialize(part, segmentIdx, location, vector);
+    const other = this.nut.materialize(part, segmentIdx, location, vector);
     return { path: this.boltHole, fastener: m6BoltAndBarrelNut };
   }
 }
