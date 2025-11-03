@@ -43,7 +43,9 @@ const isoFastenerSizes = {
     nutThickness: 4,
     washerOuterDiameter: 10,
     washerInnerDiameter: 5.3,
-    lengths: [6, 8, 10, 12, 14, 16, 18, 20, 22, 25, 30, 35, 40, 45, 50, 55, 60, 70, 100],
+    lengths: [
+      6, 8, 10, 12, 14, 16, 18, 20, 22, 25, 30, 35, 40, 45, 50, 55, 60, 70, 100,
+    ],
   },
   M6: {
     headSize: 10,
@@ -53,7 +55,10 @@ const isoFastenerSizes = {
     nutThickness: 5,
     washerOuterDiameter: 12,
     washerInnerDiameter: 6.4,
-    lengths: [8, 10, 12, 14, 16, 18, 20, 22, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 90, 100, 110, 130, 150],
+    lengths: [
+      8, 10, 12, 14, 16, 18, 20, 22, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75,
+      80, 90, 100, 110, 130, 150,
+    ],
   },
   M8: {
     headSize: 13,
@@ -63,7 +68,10 @@ const isoFastenerSizes = {
     nutThickness: 6.5,
     washerOuterDiameter: 16,
     washerInnerDiameter: 8.4,
-    lengths: [8, 10, 12, 14, 16, 18, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 90, 100, 110, 120, 140, 150, 180],
+    lengths: [
+      8, 10, 12, 14, 16, 18, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80,
+      90, 100, 110, 120, 140, 150, 180,
+    ],
   },
 };
 
@@ -175,14 +183,14 @@ export function getFastenerKit(size, length, addLengthForNut = true) {
   if (size > 5) mSize = "M5";
   if (size > 6) mSize = "M6";
   if (size > 8) mSize = "M8";
-  if (size > 9 || size < 3) throw new Error("we don't have bolts this size yet");
+  if (size > 9 || size < 3)
+    throw new Error("we don't have bolts this size yet");
 
   const iso = isoFastenerSizes[mSize];
   let requiredLength = length;
-  if (addLengthForNut)
-    requiredLength += 2 + iso.nutThickness + 3;
+  if (addLengthForNut) requiredLength += 2 + iso.nutThickness + 3;
 
-  const availableLength = iso.lengths.find(x => x >= requiredLength);
+  const availableLength = iso.lengths.find((x) => x >= requiredLength);
   const key = `${mSize}_${availableLength}`;
 
   let bolt = bolts[key];
@@ -200,8 +208,16 @@ export function getFastenerKit(size, length, addLengthForNut = true) {
   return { ...rest[mSize], bolt };
 }
 
-export const {washer: m5Washer, nut: m5Nut, bolt: m5Bolt} = getFastenerKit(5.3, 22);
-export const {washer: m6Washer, nut: m6Nut, bolt: m6Bolt} = getFastenerKit(6.3, 26);
+export const {
+  washer: m5Washer,
+  nut: m5Nut,
+  bolt: m5Bolt,
+} = getFastenerKit(5.3, 22);
+export const {
+  washer: m6Washer,
+  nut: m6Nut,
+  bolt: m6Bolt,
+} = getFastenerKit(6.3, 26);
 
 // export const m6Washer = makeWasher("M6");
 // export const m6Bolt = makeBolt("M6", 35);
@@ -230,41 +246,20 @@ export class CylinderNutFastener extends BaseSlot {
   /**
    * @param {FlatPart} part
    * @param {number} segmentIdx
-   * @param {types.Point} location
-   * @param {types.Point} vector
+   * @param {number} place
    */
-  materialize(part, segmentIdx, location, vector) {
-    const center = rotatePoint(
-      location,
-      placeAlong(location, vector, { fromStart: this.offset + this.nutRadius }),
-      -Math.PI / 2,
-    );
+  materialize(part, segmentIdx, place) {
+    const path = part.outside;
+    const line = path.subpath(segmentIdx, 0, segmentIdx, 1);
+    const [, start1, , end1] = line
+      .offset(-this.offset - this.nutRadius)
+      .getSegmentAt(1);
 
-    const barrelHole = this.nutHole.translate(center);
+    const center1 = placeAlong(start1, end1, { fromStart: place });
+
+    const barrelHole = this.nutHole.translate(center1);
     part.addInsides(barrelHole);
 
-    return { path: this.boltHole, fastener: m6BoltAndBarrelNut };
-  }
-}
-
-export class InvertedCylinderNut extends CenterDrawerSlot {
-  /**
-   * @param {number} x
-   */
-  constructor(...args) {
-    super(...args);
-    this.fastener = new CylinderNutFastener(x);
-  }
-
-  /**
-   * @param {FlatPart} part
-   * @param {number} segmentIdx
-   * @param {types.Point} location
-   * @param {types.Point} vector
-   */
-  materialize(part, segmentIdx, location, vector) {
-    const result = super.materialize(part, segmentIdx, location, vector);
-    const other = this.nut.materialize(part, segmentIdx, location, vector);
     return { path: this.boltHole, fastener: m6BoltAndBarrelNut };
   }
 }

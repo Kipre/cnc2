@@ -120,10 +120,20 @@ const joinPath = makeShelfOnPlane(
 );
 const bottom = new FlatPart("tower bottom join", woodThickness, joinPath);
 
+const centeredBolt = [cnf(0.5)];
 tower.addChild(bottom, bottomPlateLocation);
 joinParts(tower, bottom, backPlate, [
   cnf(0.8),
   new CenterDrawerSlot(0.5),
   cnf(0.2),
 ]);
-joinParts(tower, backPlate, bottom, [cnf(0.5)]);
+joinParts(tower, backPlate, bottom, centeredBolt);
+
+joinParts(tower, bottom, frontPlate, [
+  cnf(0.1),
+  new CenterDrawerSlot(0.3, true),
+  cnf(0.5),
+  new CenterDrawerSlot(0.7, true),
+  cnf(0.9),
+]);
+joinParts(tower, frontPlate, bottom, centeredBolt, centeredBolt);
