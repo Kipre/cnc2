@@ -177,6 +177,11 @@ export function boltThreadedSubpartToFlatPart(
       const locatedPath = Path.makeCircle(diameter / 2).translate(holeOnPart);
       part.addInsides(locatedPath);
 
+      if (Math.abs(zee) > eps && Math.abs(zee - part.thickness) > eps)
+        throw new Error(
+          `"${subpart.name}" does't seem to be properly located to bolt to "${part.name}"`,
+        );
+
       const onTheOtherSide = Math.abs(zee - part.thickness) < eps;
       const fastenerLocation = partPlacement.multiply(
         a2m(
@@ -295,7 +300,7 @@ chariotProfile.mirror();
 
 const holeSize = 5;
 const chariotHoleDepth = 10;
-const drillsTransform = a2m([0, chariotTop, chariotLength / 2], y3);
+const drillsTransform = a2m([0, railTopToBottom, chariotLength / 2], y3);
 const drills = makeFourDrills(
   drillsTransform,
   holeSize,
@@ -327,4 +332,4 @@ export const chariot = new Part(
 chariot.material = metalMaterial;
 chariot.symmetries = [0, NaN, NaN];
 
-export const chariotContactSurface = a2m([0, chariotTop + railCenter , 0], y3);
+export const chariotContactSurface = a2m([0, chariotTop + railCenter, 0], y3);

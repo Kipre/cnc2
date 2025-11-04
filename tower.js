@@ -21,7 +21,7 @@ import {
   woodThickness,
   zRailLength,
 } from "./dimensions.js";
-import { CylinderNutFastener } from "./fasteners.js";
+import { CylinderNutFastener, defaultSlotLayout } from "./fasteners.js";
 import {
   flatChariot,
   flatChariotHolesIterator,
@@ -109,7 +109,7 @@ const rollerPlacement = otherSide(backplatePlacement)
   .multiply(rollerContactSurface.rotate(90).inverse());
 
 tower.addChild(roller, rollerPlacement);
-// boltThreadedSubpartToFlatPart(tower, roller, backPlate, rollerHoleFinder);
+boltThreadedSubpartToFlatPart(tower, roller, backPlate, rollerHoleFinder);
 
 const bottomPlateLocation = a2m([0, 1, 0], y3);
 const joinPath = makeShelfOnPlane(
@@ -121,6 +121,8 @@ const joinPath = makeShelfOnPlane(
 const bottom = new FlatPart("tower bottom join", woodThickness, joinPath);
 
 const centeredBolt = [cnf(0.5)];
+const triple = [cnf(0.8), tm(0.5), cnf(0.2)];
+
 tower.addChild(bottom, bottomPlateLocation);
 joinParts(tower, bottom, backPlate, [
   cnf(0.8),
@@ -137,3 +139,19 @@ joinParts(tower, bottom, frontPlate, [
   cnf(0.9),
 ]);
 joinParts(tower, frontPlate, bottom, centeredBolt, centeredBolt);
+
+const middleJoinLocation = a2m([0, aluExtrusionHeight + bottomHang + 5, 0], y3);
+const middlePlatePath = makeShelfOnPlane(
+  middleJoinLocation,
+  woodThickness,
+  tower.findChild(frontPlate),
+  tower.findChild(backPlate),
+);
+const middle = new FlatPart(
+  "tower middle join",
+  woodThickness,
+  middlePlatePath,
+);
+tower.addChild(middle, middleJoinLocation);
+joinParts(tower, middle, frontPlate, triple);
+joinParts(tower, middle, backPlate, triple);

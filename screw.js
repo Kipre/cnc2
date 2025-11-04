@@ -4,17 +4,20 @@ import { ny3, x3, y2, zero2, zero3 } from "./cade/lib/defaults.js";
 import { spindleCleared2LineTo } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { blackMetalMaterial, metalMaterial } from "./cade/lib/materials.js";
-import { cut, extrusion, fuse, multiExtrusion, retrieveOperations } from "./cade/lib/operations.js";
+import {
+  cut,
+  extrusion,
+  fuse,
+  multiExtrusion,
+  retrieveOperations,
+} from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
 import { makeFourDrills } from "./cade/lib/utils.js";
 import { minus } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m } from "./cade/tools/transform.js";
-import {
-  defaultSpindleSize,
-  screwCenterToSupport,
-} from "./dimensions.js";
+import { defaultSpindleSize, screwCenterToSupport } from "./dimensions.js";
 
 export const bf12Thickness = 20;
 export const bk12Thickness = 25;
@@ -127,7 +130,7 @@ export function* bkfHoleFinder(part) {
     yield { hole: path, depth, transform };
   }
 }
-export function * bkfTwoHoleFinder(part) {
+export function* bkfTwoHoleFinder(part) {
   const it = bkfHoleFinder(part);
   it.next();
   yield it.next().value;
@@ -206,7 +209,11 @@ const drills = makeFourDrills(
 
 export function* rollerHoleFinder() {
   for (const op of retrieveOperations(drills).slice(0, -1)) {
-    yield { hole: op.outsides[0], depth: rollerThreadDepth, transform: op.placement };
+    yield {
+      hole: op.outsides[0],
+      depth: rollerThreadDepth,
+      transform: op.placement.translate(0, 0, rollerThreadDepth),
+    };
   }
 }
 
@@ -229,4 +236,7 @@ export const roller = new Part(
 roller.material = metalMaterial;
 roller.symmetries = [0, NaN, NaN];
 
-export const rollerContactSurface = a2m([0, -rollerThickness /2, rollerWidth / 2], ny3);
+export const rollerContactSurface = a2m(
+  [0, -rollerThickness / 2, rollerWidth / 2],
+  ny3,
+);
