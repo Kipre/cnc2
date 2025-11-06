@@ -5,12 +5,27 @@ import {
   aluExtrusion,
   aluStartHolesIterator,
 } from "./aluminumExtrusion.js";
-import { flatRailPlacementInGantry, screwPlacementInGantry, toExtrusionFront } from "./assemblyInvariants.js";
-import { nx3, nz3, x3, y2, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
+import {
+  flatRailPlacementInGantry,
+  screwPlacementInGantry,
+  toExtrusionFront,
+} from "./assemblyInvariants.js";
+import {
+  nx3,
+  nz3,
+  x2,
+  x3,
+  y2,
+  y3,
+  z3,
+  zero2,
+  zero3,
+} from "./cade/lib/defaults.js";
 import {
   FlatPart,
+  getFacePlacement,
   joinParts,
-  makeJoinFromEdgePoints,
+  makeShelfOnPlane,
   trimFlatPartWithAnother,
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
@@ -149,10 +164,7 @@ gantry.addChild(gantryHalf);
 gantry.addChild(aluExtrusion, a2m([-toExtrusionFront, gantrySinking, 0]));
 
 gantry.addChild(flatRail, flatRailPlacementInGantry);
-gantry.addChild(
-  flatRail,
-  flatRailPlacementInGantry.translate(interFlatRail),
-);
+gantry.addChild(flatRail, flatRailPlacementInGantry.translate(interFlatRail));
 
 gantry.addChild(screwAssy, screwPlacementInGantry);
 
@@ -180,44 +192,39 @@ bottom.assignOutsidePath(
   ),
 );
 
-function makeGantryJoin(name, start, end, offset = 0) {
-  const p1 = [...start, -joinOffset];
-  const p2 = [...end, -joinOffset];
-  const origin = transformPoint3(locatedInner.placement, p2);
-  const eax = transformPoint3(locatedInner.placement, p1);
-  const why = transformPoint3(locatedOuter.placement, p2);
-
-  const { child: join, placement: joinMatrix } = makeJoinFromEdgePoints(
-    origin,
-    eax,
-    why,
-    woodThickness,
-    joinOffset,
-    roundingRadius,
+function makeGantryJoin(name, placement) {
+  const joinPath = makeShelfOnPlane(
+    placement,
+  {woodThickness, joinOffset},
+    locatedInner,
+    locatedOuter,
   );
-  join.name = name;
-  gantryHalf.addChild(join, joinMatrix.translate(0, 0, offset));
-  return join;
+  const piece = new FlatPart(name, woodThickness, joinPath);
+  gantryHalf.addChild(piece, placement);
+  return piece;
 }
 
-const angledLineEnd = placeAlong(angledLine[1], angledLine[3], {
-  fromEnd: -woodThickness,
-});
+const angledPlacement = locatedInner.placement.multiply(
+  getFacePlacement(inner, y2, x2),
+);
 
 const angledJoin = makeGantryJoin(
   "gantry top join",
-  angledLine[1],
-  angledLineEnd,
+  angledPlacement
 );
+angledJoin.assignOutsidePath(angledJoin.outside.offset([0, 0, -woodThickness, 0]));
+angledJoin.outside.roundFilletAll(roundingRadius);
 joinParts(gantryHalf, inner, angledJoin, layout);
 joinParts(gantryHalf, outer, angledJoin, layout);
 
+const backPlacement = locatedInner.placement.multiply(
+  getFacePlacement(inner, zero2, y2),
+);
 const backJoin = makeGantryJoin(
   "gantry back join",
-  backLine[3],
-  backLine[1],
-  -woodThickness,
+  backPlacement,
 );
+backJoin.outside.roundFilletAll(roundingRadius);
 joinParts(gantryHalf, inner, backJoin, layout);
 joinParts(gantryHalf, bottom, backJoin, [tm(0.3), cnf(0.6)]);
 
@@ -228,7 +235,7 @@ joinParts(gantryHalf, bottom, backJoin, [tm(0.3), cnf(0.6)]);
   railClearance.arc([railClearanceHeight, 0], railClearanceHeight, 1);
   const [idx3] = backJoin.outside.findSegmentsOnLine(zero2, y2);
   backJoin.outside.insertFeature(railClearance, idx3, {
-    fromStart: xRailSupportWidth / 2 + woodThickness / 2,
+    fromEnd: -xRailSupportWidth / 2 - woodThickness / 2,
   });
 }
 

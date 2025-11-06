@@ -20,6 +20,7 @@ import { Assembly } from "./cade/lib/lib.js";
 import { DrawerSlot, makeTenon, TenonMortise } from "./cade/lib/slots.js";
 import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { mult3 } from "./cade/tools/3d.js";
+import { debugGeometry } from "./cade/tools/svg.js";
 import {
   a2m,
   transformOnlyOrigin,
@@ -137,7 +138,7 @@ for (const [br, innBr, outBr] of [
     const joinMatrix = a2m([0, 0, zee]);
     const joinPath = makeShelfOnPlane(
       joinMatrix,
-      woodThickness,
+      { woodThickness, joinOffset, zonePoint: [500, 100] },
       br.findChild(innBr),
       br.findChild(outBr),
     );
@@ -166,8 +167,8 @@ for (const [br, innBr, outBr] of [
     joinParts(br, upper, innBr, defaultSlotLayout);
     joinParts(br, upper, outBr, defaultSlotLayout);
 
-    joinParts(br, lower, innBr, centeredBolt, defaultSlotLayout, centeredBolt);
-    joinParts(br, lower, outBr, defaultSlotLayout);
+    joinParts(br, lower, outBr, centeredBolt, defaultSlotLayout, centeredBolt);
+    joinParts(br, lower, innBr, defaultSlotLayout);
   });
 }
 
@@ -176,7 +177,7 @@ for (const zee of [tunnelHeight - joinOffset - woodThickness, joinOffset]) {
   const joinMatrix = a2m([0, 0, zee], z3, y3);
   const joinPath = makeShelfOnPlane(
     joinMatrix,
-    woodThickness,
+    { woodThickness, joinOffset, zonePoint: [500, 100] },
     locatedInnerTunnel,
     locatedInnerBridge,
     locatedOuterTunnel,
@@ -235,7 +236,7 @@ let screwPlacement;
 
   const bkSupportPath = makeShelfOnPlane(
     bkSupportPlacement,
-    woodThickness,
+    { woodThickness, joinOffset, zonePoint: [0, 0] },
     locatedInnerTunnel,
     woodenBase.findChild(tunnelJoins[0]),
     locatedOuterTunnel,

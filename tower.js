@@ -1,14 +1,15 @@
 // @ts-check
 
 import { railToScrewPlacement } from "./assemblyInvariants.js";
-import { nx3, ny3, nz3, x3, y3, z3, zero3 } from "./cade/lib/defaults.js";
-import { FlatPart, joinParts, makeShelfOnPlane } from "./cade/lib/flat.js";
-import { Assembly } from "./cade/lib/lib.js";
+import { nx3, ny2, nz3, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
 import {
-  CenterDrawerSlot,
-  DrawerSlot,
-  TenonMortise,
-} from "./cade/lib/slots.js";
+  FlatPart,
+  getFacePlacement,
+  joinParts,
+  makeShelfOnPlane,
+} from "./cade/lib/flat.js";
+import { Assembly } from "./cade/lib/lib.js";
+import { CenterDrawerSlot, TenonMortise } from "./cade/lib/slots.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import {
@@ -21,7 +22,7 @@ import {
   woodThickness,
   zRailLength,
 } from "./dimensions.js";
-import { CylinderNutFastener, defaultSlotLayout } from "./fasteners.js";
+import { CylinderNutFastener } from "./fasteners.js";
 import {
   flatChariot,
   flatChariotHolesIterator,
@@ -76,10 +77,15 @@ boltThreadedSubpartToFlatPart(
   flatChariotHolesIterator,
 );
 
+const backPlateWidth = 100;
 const backPlate = new FlatPart(
   "tower back plate",
   woodThickness,
-  Path.makeRoundedRect(100, aluExtrusionHeight * 1.5, roundingRadius).recenter({
+  Path.makeRect(
+    backPlateWidth,
+    aluExtrusionHeight * 1.5,
+    roundingRadius,
+  ).recenter({
     onlyX: true,
   }),
 );
@@ -114,7 +120,7 @@ boltThreadedSubpartToFlatPart(tower, roller, backPlate, rollerHoleFinder);
 const bottomPlateLocation = a2m([0, 1, 0], y3);
 const joinPath = makeShelfOnPlane(
   bottomPlateLocation,
-  woodThickness,
+  { woodThickness, joinOffset },
   tower.findChild(frontPlate),
   tower.findChild(backPlate),
 );
@@ -143,7 +149,7 @@ joinParts(tower, frontPlate, bottom, centeredBolt, centeredBolt);
 const middleJoinLocation = a2m([0, aluExtrusionHeight + bottomHang + 5, 0], y3);
 const middlePlatePath = makeShelfOnPlane(
   middleJoinLocation,
-  woodThickness,
+  { woodThickness, joinOffset },
   tower.findChild(frontPlate),
   tower.findChild(backPlate),
 );
@@ -155,3 +161,31 @@ const middle = new FlatPart(
 tower.addChild(middle, middleJoinLocation);
 joinParts(tower, middle, frontPlate, triple);
 joinParts(tower, middle, backPlate, triple);
+
+const locatedBackPlate = tower.findChild(backPlate);
+const rightsidePlacement = getFacePlacement(backPlate, zero2, ny2);
+const rightSupportPlacement =
+  locatedBackPlate.placement.multiply(rightsidePlacement);
+
+const verticalAngle = makeShelfOnPlane(
+  rightSupportPlacement,
+  { woodThickness, zoneIndex: 1 },
+  tower.findChild(frontPlate),
+  locatedBackPlate,
+  tower.findChild(middle),
+);
+const rightSideSupport = new FlatPart(
+  "vertical support join",
+  woodThickness,
+  verticalAngle,
+);
+tower.addChild(rightSideSupport, rightSupportPlacement);
+tower.addChild(
+  rightSideSupport,
+  rightSupportPlacement.translate(0, 0, -backPlateWidth - woodThickness),
+);
+
+
+joinParts(tower, rightSideSupport, frontPlate, triple);
+// joinParts(tower, backPlate, rightSideSupport, centeredBolt);
+
