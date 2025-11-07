@@ -187,5 +187,5 @@ tower.addChild(
 
 
 joinParts(tower, rightSideSupport, frontPlate, triple);
-// joinParts(tower, backPlate, rightSideSupport, centeredBolt);
+joinParts(tower, backPlate, rightSideSupport, centeredBolt);
 

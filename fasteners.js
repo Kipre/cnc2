@@ -268,10 +268,14 @@ export class CylinderNutFastener extends BaseSlot {
  * @param {number} length
  */
 export function defaultSlotLayout(length) {
+  const offset = 70;
+  if (length < 2 * offset) {
+    const err = new Error("overlap too short for a default layout");
+    console.warn(err);
+  }
   const slots = [];
 
   const nbFasteners = Math.ceil(length / 250);
-  const offset = 70;
   const fastenerPitch = (length - 2 * offset) / (nbFasteners - 1);
 
   let lastLocation = offset;
