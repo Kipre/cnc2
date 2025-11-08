@@ -14,9 +14,9 @@ import {
   findFlatPartIntersection,
   halfLapCrossJoin,
   joinParts,
-  makeShelfOnPlane,
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
+import { makeShelfOnPlane } from "./cade/lib/shelf.js";
 import { DrawerSlot, makeTenon, TenonMortise } from "./cade/lib/slots.js";
 import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { mult3 } from "./cade/tools/3d.js";

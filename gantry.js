@@ -25,10 +25,10 @@ import {
   FlatPart,
   getFacePlacement,
   joinParts,
-  makeShelfOnPlane,
   trimFlatPartWithAnother,
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
+import { makeShelfOnPlane } from "./cade/lib/shelf.js";
 import { HornSlot, TenonMortise } from "./cade/lib/slots.js";
 import { axesArrows, locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { placeAlong, plus } from "./cade/tools/2d.js";

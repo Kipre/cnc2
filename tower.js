@@ -6,7 +6,6 @@ import {
   FlatPart,
   getFacePlacement,
   joinParts,
-  makeShelfOnPlane,
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { CenterDrawerSlot, TenonMortise } from "./cade/lib/slots.js";
@@ -57,6 +56,7 @@ import {
   shaftY,
   shortScrewAssy,
 } from "./screw.js";
+import { makeShelfOnPlane, ShelfMaker } from "./cade/lib/shelf.js";
 
 const tm = (x) => new TenonMortise(x);
 const cnf = (x) => new CylinderNutFastener(x);
@@ -72,7 +72,7 @@ export const frontPlate = new FlatPart(
 export const towerBottomToRail = woodThickness;
 export const tower = new Assembly("tower");
 const towerPlatePlacement = a2m(zero3, nx3, z3);
-tower.addChild(frontPlate, towerPlatePlacement);
+const locatedFrontPlate = tower.addChild(frontPlate, towerPlatePlacement);
 
 const interChariot = carrierWheelbase;
 const bottomHang = 5 + woodThickness;
@@ -185,7 +185,7 @@ const topPlacement = towerPlatePlacement
   .multiply(getFacePlacement(frontPlate, zero2, x2))
   .translate(0, -woodThickness - motorSupportWidth);
 
-export const top = new FlatPart(
+const top = new FlatPart(
   "top tower plate",
   woodThickness,
   Path.makeRect(carrierWheelbase, 50 + woodThickness + motorSupportWidth),
@@ -197,14 +197,12 @@ const rightsidePlacement = getFacePlacement(backPlate, zero2, y2);
 const rightSupportPlacement =
   locatedBackPlate.placement.multiply(rightsidePlacement);
 
-const verticalAngle = makeShelfOnPlane(
-  rightSupportPlacement,
-  { woodThickness, zoneIndex: 1 },
-  tower.findChild(frontPlate),
-  locatedBackPlate,
-  tower.findChild(middle),
-  tower.findChild(top),
-);
+const verticalAngle = new ShelfMaker(rightSupportPlacement, { woodThickness, zoneIndex: 1 })
+  .addFlatPart(locatedFrontPlate)
+  .addFlatPart(locatedBackPlate)
+  .addFlatPart(tower.findChild(middle))
+  .addFlatPart(tower.findChild(top))
+  .makeLegacy();
 
 const rightSideSupport = new FlatPart(
   "vertical support join",
@@ -236,12 +234,12 @@ const screwPlacement = locateWithConstraints(
 
 tower.addChild(shortScrewAssy, screwPlacement);
 
-const minimalTop = makeShelfOnPlane(
-  topPlacement,
-  { woodThickness },
-  tower.findChild(frontPlate),
-  tower.findChild(rightSideSupport),
-  tower.findChild(leftSideSupport),
-);
+const minimalTop = new ShelfMaker(topPlacement, { woodThickness })
+  .addFlatPart(locatedFrontPlate)
+  .addFlatPart(tower.findChild(rightSideSupport))
+  .addFlatPart(tower.findChild(leftSideSupport))
+  .addFeature(Path.makeRect(motorSupportWidth).recenter(), tower.findChild(nema23).placement)
+  .make();
 
-// debugGeometry(minimalTop);
+top.assignOutsidePath(minimalTop);
+
