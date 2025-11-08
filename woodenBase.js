@@ -54,7 +54,6 @@ import {
   bkfHoleFinder,
   bkPlateCutout,
   screwAssy,
-  screwShaftPlacement,
 } from "./screw.js";
 import { innerTunnel, outerTunnel, tunnel } from "./tunnel.js";
 
@@ -220,12 +219,6 @@ let screwPlacement;
 
   woodenBase.addChild(screwAssy, screwPlacement);
 
-  const onShaft = a2m(
-    transformPoint3(screwShaftPlacement, zero3),
-    transformPoint3(screwShaftPlacement, x3, true),
-  );
-  screwAssy.addChild(motorWithCoupler, onShaft);
-
   fastenSubpartToFlatPart(woodenBase, nema23, innerBridge, motorHolesGetter);
   fastenSubpartToFlatPart(woodenBase, bf12, secondInnerBridge, bkfHoleFinder);
 
@@ -282,7 +275,7 @@ let screwPlacement;
     new CylinderNutFastener(0.7),
     new DrawerSlot(false),
   ]);
-  joinParts(tunnel, bkSupport, outerTunnel, [new CylinderNutFastener(0.2)], []);
+  joinParts(tunnel, bkSupport, outerTunnel, [], [new CylinderNutFastener(0.2)]);
 
   fastenSubpartToFlatPart(woodenBase, bk12, bkSupport, bkfHoleFinder);
 }

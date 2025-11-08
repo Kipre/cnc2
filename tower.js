@@ -1,7 +1,7 @@
 // @ts-check
+/** @import * as types from './cade/tools/types' */
 
 import { railToScrewPlacement } from "./assemblyInvariants.js";
-import { nx3, ny2, nz3, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
 import {
   FlatPart,
   getFacePlacement,
@@ -10,14 +10,30 @@ import {
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { CenterDrawerSlot, TenonMortise } from "./cade/lib/slots.js";
+import {
+  nx3,
+  nz3,
+  x2,
+  y2,
+  y3,
+  z3,
+  zero2,
+  zero3,
+} from "./cade/tools/defaults.js";
 import { Path } from "./cade/tools/path.js";
-import { a2m, transformPoint3 } from "./cade/tools/transform.js";
+import { debugGeometry } from "./cade/tools/svg.js";
+import {
+  a2m,
+  locateWithConstraints,
+  transformPoint3,
+} from "./cade/tools/transform.js";
 import {
   aluExtrusionHeight,
   aluExtrusionThickness,
   carrierWheelbase,
   interFlatRail,
   joinOffset,
+  motorSupportWidth,
   roundingRadius,
   woodThickness,
   zRailLength,
@@ -30,13 +46,16 @@ import {
   flatChariotWidth,
   flatRailTotalHeight,
 } from "./flatRails.js";
+import { nema23 } from "./motor.js";
 import { boltThreadedSubpartToFlatPart } from "./rails.js";
 import {
+  bf12,
   roller,
   rollerContactSurface,
   rollerHoleFinder,
   rollerThickness,
   shaftY,
+  shortScrewAssy,
 } from "./screw.js";
 
 const tm = (x) => new TenonMortise(x);
@@ -45,7 +64,7 @@ const cnf = (x) => new CylinderNutFastener(x);
 export const frontPlate = new FlatPart(
   "tower plate",
   woodThickness,
-  Path.makeRoundedRect(carrierWheelbase, zRailLength, roundingRadius).recenter({
+  Path.makeRect(carrierWheelbase, zRailLength, roundingRadius).recenter({
     onlyX: true,
   }),
 );
@@ -101,8 +120,8 @@ const plateToPlate =
 const backplatePlacement = towerPlatePlacement.translate(0, 0, -plateToPlate);
 tower.addChild(backPlate, backplatePlacement);
 
-function otherSide(placement) {
-  return placement.multiply(a2m([0, 0, woodThickness], nz3));
+function otherSide(placement, other = false) {
+  return placement.multiply(a2m([0, 0, woodThickness], other ? nz3 : z3));
 }
 
 const screwAxisPlacement = tower
@@ -110,7 +129,7 @@ const screwAxisPlacement = tower
   .placement.multiply(railToScrewPlacement);
 const screwPoint = transformPoint3(screwAxisPlacement, zero3);
 
-const rollerPlacement = otherSide(backplatePlacement)
+const rollerPlacement = otherSide(backplatePlacement, true)
   .translate(0, -screwPoint[1])
   .multiply(rollerContactSurface.rotate(90).inverse());
 
@@ -162,8 +181,19 @@ tower.addChild(middle, middleJoinLocation);
 joinParts(tower, middle, frontPlate, triple);
 joinParts(tower, middle, backPlate, triple);
 
+const topPlacement = towerPlatePlacement
+  .multiply(getFacePlacement(frontPlate, zero2, x2))
+  .translate(0, -woodThickness - motorSupportWidth);
+
+export const top = new FlatPart(
+  "top tower plate",
+  woodThickness,
+  Path.makeRect(carrierWheelbase, 50 + woodThickness + motorSupportWidth),
+);
+tower.addChild(top, topPlacement);
+
 const locatedBackPlate = tower.findChild(backPlate);
-const rightsidePlacement = getFacePlacement(backPlate, zero2, ny2);
+const rightsidePlacement = getFacePlacement(backPlate, zero2, y2);
 const rightSupportPlacement =
   locatedBackPlate.placement.multiply(rightsidePlacement);
 
@@ -173,19 +203,45 @@ const verticalAngle = makeShelfOnPlane(
   tower.findChild(frontPlate),
   locatedBackPlate,
   tower.findChild(middle),
+  tower.findChild(top),
 );
+
 const rightSideSupport = new FlatPart(
   "vertical support join",
   woodThickness,
   verticalAngle,
 );
+const leftSideSupport = rightSideSupport.clone();
 tower.addChild(rightSideSupport, rightSupportPlacement);
 tower.addChild(
-  rightSideSupport,
+  leftSideSupport,
   rightSupportPlacement.translate(0, 0, -backPlateWidth - woodThickness),
 );
 
+for (const part of [rightSideSupport, leftSideSupport]) {
+  joinParts(tower, part, frontPlate, triple);
+  joinParts(tower, backPlate, part, centeredBolt);
+}
 
-joinParts(tower, rightSideSupport, frontPlate, triple);
-joinParts(tower, backPlate, rightSideSupport, centeredBolt);
+const screwPlacement = locateWithConstraints(
+  {
+    from: shortScrewAssy.findChild(nema23).placement,
+    to: otherSide(topPlacement),
+  },
+  {
+    from: shortScrewAssy.findChild(bf12).placement,
+    to: otherSide(towerPlatePlacement),
+  },
+);
 
+tower.addChild(shortScrewAssy, screwPlacement);
+
+const minimalTop = makeShelfOnPlane(
+  topPlacement,
+  { woodThickness },
+  tower.findChild(frontPlate),
+  tower.findChild(rightSideSupport),
+  tower.findChild(leftSideSupport),
+);
+
+// debugGeometry(minimalTop);

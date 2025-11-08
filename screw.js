@@ -16,8 +16,9 @@ import { makeFourDrills } from "./cade/lib/utils.js";
 import { minus } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
-import { a2m } from "./cade/tools/transform.js";
+import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import { defaultSpindleSize, screwCenterToSupport } from "./dimensions.js";
+import { motorWithCoupler } from "./motor.js";
 
 export const bf12Thickness = 20;
 export const bk12Thickness = 25;
@@ -153,7 +154,7 @@ function makeScrewAssembly(length) {
     endLength,
     Path.makeCircle(endDiameter / 2).translate(shaftCenter),
   );
-  const screw = new Part("screw", fuse(shaftBody, endBody));
+  const screw = new Part(`screw ${length}`, fuse(shaftBody, endBody));
   screw.symmetries = [NaN, 0, shaftY];
   screw.material = metalMaterial;
 
@@ -161,11 +162,15 @@ function makeScrewAssembly(length) {
   result.addChild(bf12, a2m([bf12Thickness / 2, 0, 0]));
   result.addChild(bk12, a2m([bk12Thickness / 2 + distance, 0, 0]));
   result.addChild(screw, a2m());
+
+  const screwShaftPlacement = a2m([length, 0, shaftY], x3);
+  result.addChild(motorWithCoupler, screwShaftPlacement);
   return result;
 }
 
 export const screwAssy = makeScrewAssembly(1000);
-export const screwShaftPlacement = a2m([1000, 0, shaftY]);
+
+export const shortScrewAssy = makeScrewAssembly(300);
 
 const rollerLength = 40;
 export const rollerThickness = 40;
@@ -240,3 +245,4 @@ export const rollerContactSurface = a2m(
   [0, -rollerThickness / 2, rollerWidth / 2],
   ny3,
 );
+
