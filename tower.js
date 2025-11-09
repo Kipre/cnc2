@@ -2,17 +2,16 @@
 /** @import * as types from './cade/tools/types' */
 
 import { railToScrewPlacement } from "./assemblyInvariants.js";
-import {
-  FlatPart,
-  getFacePlacement,
-  joinParts,
-} from "./cade/lib/flat.js";
+import { FlatPart, getFacePlacement, joinParts } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { CenterDrawerSlot, TenonMortise } from "./cade/lib/slots.js";
 import {
+  nx2,
   nx3,
+  ny3,
   nz3,
   x2,
+  x3,
   y2,
   y3,
   z3,
@@ -44,10 +43,12 @@ import {
   flatChariotLength,
   flatChariotWidth,
   flatRailTotalHeight,
+  shortFlatRail,
 } from "./flatRails.js";
 import { nema23 } from "./motor.js";
 import { boltThreadedSubpartToFlatPart } from "./rails.js";
 import {
+  baseSurfaceToRollerSurface,
   bf12,
   roller,
   rollerContactSurface,
@@ -61,12 +62,11 @@ import { makeShelfOnPlane, ShelfMaker } from "./cade/lib/shelf.js";
 const tm = (x) => new TenonMortise(x);
 const cnf = (x) => new CylinderNutFastener(x);
 
+const frontPlateHeight = zRailLength - woodThickness;
 export const frontPlate = new FlatPart(
   "tower plate",
   woodThickness,
-  Path.makeRect(carrierWheelbase, zRailLength, roundingRadius).recenter({
-    onlyX: true,
-  }),
+  Path.makeRect(carrierWheelbase, frontPlateHeight).recenter({ onlyX: true }),
 );
 
 export const towerBottomToRail = woodThickness;
@@ -81,7 +81,11 @@ for (const x of [-interChariot / 2, interChariot / 2 - flatChariotLength]) {
     tower.addChild(
       flatChariot,
       a2m(
-        [flatRailTotalHeight, bottomHang + flatChariotWidth / 2 + y, x],
+        [
+          flatRailTotalHeight,
+          -woodThickness + bottomHang + flatChariotWidth / 2 + y,
+          x,
+        ],
         z3,
         y3,
       ),
@@ -100,11 +104,7 @@ const backPlateWidth = 100;
 const backPlate = new FlatPart(
   "tower back plate",
   woodThickness,
-  Path.makeRect(
-    backPlateWidth,
-    aluExtrusionHeight * 1.5,
-    roundingRadius,
-  ).recenter({
+  Path.makeRect(backPlateWidth, aluExtrusionHeight * 1.5).recenter({
     onlyX: true,
   }),
 );
@@ -117,12 +117,44 @@ const plateToPlate =
   flatRailTotalHeight +
   woodThickness;
 
-const backplatePlacement = towerPlatePlacement.translate(0, 0, -plateToPlate);
+const backplatePlacement = towerPlatePlacement.translate(
+  0,
+  -woodThickness,
+  -plateToPlate,
+);
 tower.addChild(backPlate, backplatePlacement);
 
 function otherSide(placement, other = false) {
   return placement.multiply(a2m([0, 0, woodThickness], other ? nz3 : z3));
 }
+
+const railBottom = baseSurfaceToRollerSurface - flatRailTotalHeight;
+const shortRailPlacement = locateWithConstraints({
+  from: a2m(zero3, y3),
+  to: otherSide(locatedFrontPlate.placement),
+})
+  .rotate(0, 180)
+  .translate(0, railBottom);
+
+const railOffcenter = (carrierWheelbase - flatChariotWidth) / 2;
+tower.addChild(shortFlatRail, shortRailPlacement.translate(railOffcenter));
+tower.addChild(shortFlatRail, shortRailPlacement.translate(-railOffcenter));
+
+const railBase = new FlatPart(
+  "vertical rail base",
+  woodThickness,
+  Path.makeRect(railBottom, frontPlateHeight),
+);
+const railBasePlacement = a2m(
+  [-woodThickness, 0, -railOffcenter + woodThickness / 2],
+  nz3,
+  nx3,
+);
+const rightRailSupport = tower.addChild(railBase, railBasePlacement);
+const leftRailSupport = tower.addChild(
+  railBase.clone(),
+  railBasePlacement.translate(0, 0, -2 * railOffcenter),
+);
 
 const screwAxisPlacement = tower
   .findChild(flatChariot)
@@ -136,34 +168,38 @@ const rollerPlacement = otherSide(backplatePlacement, true)
 tower.addChild(roller, rollerPlacement);
 boltThreadedSubpartToFlatPart(tower, roller, backPlate, rollerHoleFinder);
 
-const bottomPlateLocation = a2m([0, 1, 0], y3);
-const joinPath = makeShelfOnPlane(
-  bottomPlateLocation,
-  { woodThickness, joinOffset },
-  tower.findChild(frontPlate),
-  tower.findChild(backPlate),
-);
+const bottomPlateLocation = getFacePlacement(frontPlate, zero2, nx2);
+const joinPath = new ShelfMaker(bottomPlateLocation, {
+  woodThickness,
+  zonePoint: [-100, 0],
+})
+  .addFlatPart(tower.findChild(frontPlate))
+  .addFlatPart(tower.findChild(backPlate))
+  .addFlatPart(rightRailSupport)
+  .addFlatPart(leftRailSupport)
+  .make();
+
 const bottom = new FlatPart("tower bottom join", woodThickness, joinPath);
 
 const centeredBolt = [cnf(0.5)];
 const triple = [cnf(0.8), tm(0.5), cnf(0.2)];
 
 tower.addChild(bottom, bottomPlateLocation);
-joinParts(tower, bottom, backPlate, [
-  cnf(0.8),
-  new CenterDrawerSlot(0.5),
-  cnf(0.2),
-]);
-joinParts(tower, backPlate, bottom, centeredBolt);
-
-joinParts(tower, bottom, frontPlate, [
-  cnf(0.1),
-  new CenterDrawerSlot(0.3, true),
-  cnf(0.5),
-  new CenterDrawerSlot(0.7, true),
-  cnf(0.9),
-]);
-joinParts(tower, frontPlate, bottom, centeredBolt, centeredBolt);
+// joinParts(tower, bottom, backPlate, [
+//   cnf(0.8),
+//   new CenterDrawerSlot(0.5),
+//   cnf(0.2),
+// ]);
+// joinParts(tower, backPlate, bottom, centeredBolt);
+//
+// joinParts(tower, bottom, frontPlate, [
+//   cnf(0.1),
+//   new CenterDrawerSlot(0.3, true),
+//   cnf(0.5),
+//   new CenterDrawerSlot(0.7, true),
+//   cnf(0.9),
+// ]);
+// joinParts(tower, frontPlate, bottom, centeredBolt, centeredBolt);
 
 const middleJoinLocation = a2m([0, aluExtrusionHeight + bottomHang + 5, 0], y3);
 const middlePlatePath = makeShelfOnPlane(
@@ -197,12 +233,15 @@ const rightsidePlacement = getFacePlacement(backPlate, zero2, y2);
 const rightSupportPlacement =
   locatedBackPlate.placement.multiply(rightsidePlacement);
 
-const verticalAngle = new ShelfMaker(rightSupportPlacement, { woodThickness, zoneIndex: 1 })
+const verticalAngle = new ShelfMaker(rightSupportPlacement, {
+  woodThickness,
+  zonePoint: [266, -52],
+})
   .addFlatPart(locatedFrontPlate)
   .addFlatPart(locatedBackPlate)
   .addFlatPart(tower.findChild(middle))
   .addFlatPart(tower.findChild(top))
-  .makeLegacy();
+  .make();
 
 const rightSideSupport = new FlatPart(
   "vertical support join",
@@ -238,8 +277,11 @@ const minimalTop = new ShelfMaker(topPlacement, { woodThickness })
   .addFlatPart(locatedFrontPlate)
   .addFlatPart(tower.findChild(rightSideSupport))
   .addFlatPart(tower.findChild(leftSideSupport))
-  .addFeature(Path.makeRect(motorSupportWidth).recenter(), tower.findChild(nema23).placement)
+  .addFeature(
+    Path.makeRect(motorSupportWidth).recenter(),
+    tower.findChild(nema23).placement,
+  )
+  .addFlatPart(rightRailSupport)
+  .addFlatPart(leftRailSupport)
   .make();
-
 top.assignOutsidePath(minimalTop);
-

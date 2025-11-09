@@ -137,7 +137,7 @@ for (const [br, innBr, outBr] of [
     const joinMatrix = a2m([0, 0, zee]);
     const joinPath = makeShelfOnPlane(
       joinMatrix,
-      { woodThickness, joinOffset, zonePoint: [500, 100] },
+      { woodThickness, joinOffset, zonePoint: [300, -35] },
       br.findChild(innBr),
       br.findChild(outBr),
     );
@@ -176,7 +176,7 @@ for (const zee of [tunnelHeight - joinOffset - woodThickness, joinOffset]) {
   const joinMatrix = a2m([0, 0, zee], z3, y3);
   const joinPath = makeShelfOnPlane(
     joinMatrix,
-    { woodThickness, joinOffset, zonePoint: [500, 100] },
+    { woodThickness, joinOffset, zonePoint: [300, 57] },
     locatedInnerTunnel,
     locatedInnerBridge,
     locatedOuterTunnel,

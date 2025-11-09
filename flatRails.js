@@ -35,16 +35,22 @@ const hole = fuse(
   extrusion(a2m([0, 0, -holeDepth]), 10, Path.makeCircle(smallDiameter / 2)),
 );
 
-const holes = [];
-for (let x = 10; x < 1000; x += 25) {
-  holes.push({ placement: a2m([0, 0, x], ny3), shape: hole });
+function makeFlatRail(length) {
+  const holes = [];
+  for (let x = 10; x < length; x += 25) {
+    holes.push({ placement: a2m([0, 0, x], ny3), shape: hole });
+  }
+
+  const flatRail = new Part(
+    `${length}mm flat rail`,
+    cut(extrusion(a2m([0, 0, 0]), length, railProfile), ...holes),
+  );
+  flatRail.material = metalMaterial;
+  return flatRail;
 }
 
-export const flatRail = new Part(
-  "1000mm flat rail",
-  cut(extrusion(a2m([0, 0, 0]), 1000, railProfile), ...holes),
-);
-flatRail.material = metalMaterial;
+export const flatRail = makeFlatRail(1000);
+export const shortFlatRail = makeFlatRail(350);
 
 const thickenedRailProfile = railProfile.offset(-1);
 export const flatChariotWidth = 27;
