@@ -4,7 +4,11 @@
 import { railToScrewPlacement } from "./assemblyInvariants.js";
 import { FlatPart, getFacePlacement, joinParts } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
-import { CenterDrawerSlot, TenonMortise } from "./cade/lib/slots.js";
+import {
+  CenterDrawerSlot,
+  TenonMortise,
+  TroughAngleSupport,
+} from "./cade/lib/slots.js";
 import {
   nx2,
   nx3,
@@ -134,11 +138,17 @@ const shortRailPlacement = locateWithConstraints({
   to: otherSide(locatedFrontPlate.placement),
 })
   .rotate(0, 180)
-  .translate(0, railBottom);
+  .translate(0, railBottom, -woodThickness);
 
 const railOffcenter = (carrierWheelbase - flatChariotWidth) / 2;
 tower.addChild(shortFlatRail, shortRailPlacement.translate(railOffcenter));
 tower.addChild(shortFlatRail, shortRailPlacement.translate(-railOffcenter));
+
+const topPlacement = towerPlatePlacement
+  .multiply(getFacePlacement(frontPlate, zero2, x2))
+  .translate(0, -woodThickness - motorSupportWidth);
+
+const bottomPlateLocation = getFacePlacement(frontPlate, zero2, nx2);
 
 const railBase = new FlatPart(
   "vertical rail base",
@@ -156,6 +166,7 @@ const leftRailSupport = tower.addChild(
   railBasePlacement.translate(0, 0, -2 * railOffcenter),
 );
 
+
 const screwAxisPlacement = tower
   .findChild(flatChariot)
   .placement.multiply(railToScrewPlacement);
@@ -168,7 +179,6 @@ const rollerPlacement = otherSide(backplatePlacement, true)
 tower.addChild(roller, rollerPlacement);
 boltThreadedSubpartToFlatPart(tower, roller, backPlate, rollerHoleFinder);
 
-const bottomPlateLocation = getFacePlacement(frontPlate, zero2, nx2);
 const joinPath = new ShelfMaker(bottomPlateLocation, {
   woodThickness,
   zonePoint: [-100, 0],
@@ -183,23 +193,22 @@ const bottom = new FlatPart("tower bottom join", woodThickness, joinPath);
 
 const centeredBolt = [cnf(0.5)];
 const triple = [cnf(0.8), tm(0.5), cnf(0.2)];
+// const quint = [cnf(0.1), tm(0.3), cnf(0.5), tm(0.7), cnf(0.9)];
 
 tower.addChild(bottom, bottomPlateLocation);
-// joinParts(tower, bottom, backPlate, [
-//   cnf(0.8),
-//   new CenterDrawerSlot(0.5),
-//   cnf(0.2),
-// ]);
-// joinParts(tower, backPlate, bottom, centeredBolt);
-//
-// joinParts(tower, bottom, frontPlate, [
-//   cnf(0.1),
-//   new CenterDrawerSlot(0.3, true),
-//   cnf(0.5),
-//   new CenterDrawerSlot(0.7, true),
-//   cnf(0.9),
-// ]);
-// joinParts(tower, frontPlate, bottom, centeredBolt, centeredBolt);
+joinParts(tower, bottom, backPlate, [
+  cnf(0.2),
+  new CenterDrawerSlot(0.5, true),
+  cnf(0.8),
+]);
+joinParts(tower, backPlate, bottom, centeredBolt);
+
+joinParts(tower, frontPlate, bottom, [
+  cnf(0.1),
+  new CenterDrawerSlot(0.5, false, 100),
+  cnf(0.9),
+]);
+joinParts(tower, bottom, frontPlate, centeredBolt);
 
 const middleJoinLocation = a2m([0, aluExtrusionHeight + bottomHang + 5, 0], y3);
 const middlePlatePath = makeShelfOnPlane(
@@ -213,13 +222,29 @@ const middle = new FlatPart(
   woodThickness,
   middlePlatePath,
 );
-tower.addChild(middle, middleJoinLocation);
-joinParts(tower, middle, frontPlate, triple);
+const locatedMiddle = tower.addChild(middle, middleJoinLocation);
+
+joinParts(tower, middle, frontPlate, [
+  new TroughAngleSupport(locatedMiddle, leftRailSupport, true),
+  cnf(0.35), cnf(0.65),
+  new TroughAngleSupport(locatedMiddle, rightRailSupport),
+]);
 joinParts(tower, middle, backPlate, triple);
 
-const topPlacement = towerPlatePlacement
-  .multiply(getFacePlacement(frontPlate, zero2, x2))
-  .translate(0, -woodThickness - motorSupportWidth);
+for (const part of [railBase, leftRailSupport.child]) {
+  joinParts(tower, middle, part, centeredBolt);
+  const side = part === railBase;
+  joinParts(tower, part, frontPlate, [
+    cnf(0.15),
+    new CenterDrawerSlot(0.3, side),
+    cnf(0.48),
+    cnf(0.65),
+    new CenterDrawerSlot(0.8, side, 50),
+    cnf(0.95),
+  ]);
+  joinParts(tower, frontPlate, part, centeredBolt, centeredBolt);
+}
+
 
 const top = new FlatPart(
   "top tower plate",
@@ -249,14 +274,14 @@ const rightSideSupport = new FlatPart(
   verticalAngle,
 );
 const leftSideSupport = rightSideSupport.clone();
-tower.addChild(rightSideSupport, rightSupportPlacement);
+const locatedRightSide = tower.addChild(rightSideSupport, rightSupportPlacement);
 tower.addChild(
   leftSideSupport,
   rightSupportPlacement.translate(0, 0, -backPlateWidth - woodThickness),
 );
 
 for (const part of [rightSideSupport, leftSideSupport]) {
-  joinParts(tower, part, frontPlate, triple);
+  joinParts(tower, part, frontPlate, [cnf(0.9), tm(0.65), cnf(0.2)]);
   joinParts(tower, backPlate, part, centeredBolt);
 }
 
