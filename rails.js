@@ -213,6 +213,7 @@ export function fastenSubpartToFlatPartEdge(
   subpart,
   part,
   holeIterator,
+  useHexBolt = false,
 ) {
   const partPlacement = parent.findChild(part).placement;
 
@@ -224,16 +225,19 @@ export function fastenSubpartToFlatPartEdge(
     for (const { hole, depth, transform: holeTransform } of holeIterator(
       subpart,
     )) {
-      const cylinderNutOffset = 15;
+      const cylinderNutOffset = 10;
       const [, p1, , p2] = hole.getSegmentAt(1);
       const diameter = norm(p1, p2);
-      console.assert(Math.abs(diameter - 5) < 0.6, diameter);
 
       const cylinderDiameter = 10;
       const requiredClampingLength =
         depth + cylinderNutOffset + cylinderDiameter / 2;
 
-      const { bolt, washer } = getFastenerKit(5, requiredClampingLength, false);
+      const { hexBolt, bolt, washer } = getFastenerKit(
+        diameter,
+        requiredClampingLength,
+        false,
+      );
 
       const center = placeAlong(p1, p2, { fraction: 0.5 });
 
@@ -253,6 +257,7 @@ export function fastenSubpartToFlatPartEdge(
       const locatedPath = Path.makeCircle(cylinderDiameter / 2).translate(
         barrelCenter,
       );
+
       part.addInsides(locatedPath);
 
       const top = partPlacement.multiply(a2m(holeStart, nx3));
@@ -260,8 +265,12 @@ export function fastenSubpartToFlatPartEdge(
         a2m([0, 0, depth + cylinderNutOffset], z3, y3),
       );
 
-      subpart.pairings.push({ ...parent.addChild(bolt, top), parent });
-      subpart.pairings.push({ ...parent.addChild(washer, top), parent });
+      if (!useHexBolt) {
+        subpart.pairings.push({ ...parent.addChild(bolt, top), parent });
+        subpart.pairings.push({ ...parent.addChild(washer, top), parent });
+      } else {
+        subpart.pairings.push({ ...parent.addChild(hexBolt, top), parent });
+      }
       subpart.pairings.push({
         ...parent.addChild(m5CylinderNut, bottom),
         parent,

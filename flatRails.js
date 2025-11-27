@@ -30,9 +30,10 @@ railProfile.lineTo([railWidth / 2, railHeight]);
 railProfile.mirror(zero2, y2);
 railProfile.close();
 
+const railHole = Path.makeCircle(smallDiameter / 2);
 const hole = fuse(
   extrusion(a2m([0, 0, -holeDepth], nz3), 10, Path.makeCircle(bigDiameter / 2)),
-  extrusion(a2m([0, 0, -holeDepth]), 10, Path.makeCircle(smallDiameter / 2)),
+  extrusion(a2m([0, 0, -holeDepth]), 10, railHole),
 );
 
 function makeFlatRail(length) {
@@ -47,6 +48,22 @@ function makeFlatRail(length) {
   );
   flatRail.material = metalMaterial;
   return flatRail;
+}
+
+/**
+ * @param {number} length
+ */
+export function flatRailHolesIterator(length) {
+  return function*() {
+    const extrusionLocation = a2m([0, 0, 0 ]);
+    for (let x = 10; x < length; x += 25) {
+      yield {
+        hole: railHole,
+        depth: holeDepth,
+        transform: extrusionLocation.multiply(a2m([0, 0, x], y3)),
+      };
+    }
+  }
 }
 
 export const flatRail = makeFlatRail(1000);

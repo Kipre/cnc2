@@ -10,17 +10,7 @@ import {
   screwPlacementInGantry,
   toExtrusionFront,
 } from "./assemblyInvariants.js";
-import {
-  nx3,
-  nz3,
-  x2,
-  x3,
-  y2,
-  y3,
-  z3,
-  zero2,
-  zero3,
-} from "./cade/lib/defaults.js";
+import { nx3, nz3, x2, y2, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
 import {
   FlatPart,
   getFacePlacement,
@@ -30,17 +20,14 @@ import {
 import { Assembly } from "./cade/lib/lib.js";
 import { makeShelfOnPlane } from "./cade/lib/shelf.js";
 import { HornSlot, TenonMortise } from "./cade/lib/slots.js";
-import { axesArrows, locateOriginOnFlatPart } from "./cade/lib/utils.js";
-import { placeAlong, plus } from "./cade/tools/2d.js";
+import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
+import { plus } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
-import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import {
   aluExtrusionHeight,
-  aluExtrusionOffsetInGantry,
   aluExtrusionThickness,
   carrierWheelbase,
-  gantryPosition,
   interFlatRail,
   joinOffset,
   openArea,
@@ -55,7 +42,7 @@ import {
   yRailPlacementOnTunnel,
 } from "./dimensions.js";
 import { CylinderNutFastener } from "./fasteners.js";
-import { flatChariot, flatRail, flatRailTotalHeight } from "./flatRails.js";
+import { flatChariot, flatRail } from "./flatRails.js";
 import {
   motorCenteringHole,
   motorHolesGetter,
@@ -72,13 +59,11 @@ import {
   fastenSubpartToFlatPart,
   fastenSubpartToFlatPartEdge,
   railTopToBottom,
-  yRail,
 } from "./rails.js";
 import {
   baseSurfaceToRollerSurface,
   bf12,
   bf12Thickness,
-  bfk12Width,
   bk12,
   bkfHoleFinder,
   bkfTwoHoleFinder,
@@ -90,7 +75,7 @@ import {
   screwAssy,
   shaftY,
 } from "./screw.js";
-import { tower, towerBottomToRail } from "./tower.js";
+import { tower } from "./tower.js";
 
 const height = aluExtrusionHeight;
 const width = carrierWheelbase;
@@ -103,13 +88,10 @@ const cnf = (x) => new CylinderNutFastener(x);
 const innerPath = new Path();
 innerPath.moveTo([0, 0]);
 innerPath.lineTo([0, height]);
-const backLine = innerPath.getSegmentAt(-1);
 
 innerPath.lineTo([width, height]);
 innerPath.lineTo([width, 0]);
 innerPath.fillet(angleFillet);
-
-const angledLine = innerPath.getSegmentAt(-2);
 
 const outerPath = innerPath.clone();
 innerPath.close();
@@ -195,7 +177,7 @@ bottom.assignOutsidePath(
 function makeGantryJoin(name, placement) {
   const joinPath = makeShelfOnPlane(
     placement,
-  {woodThickness, joinOffset},
+    { woodThickness, joinOffset },
     locatedInner,
     locatedOuter,
   );
@@ -208,11 +190,10 @@ const angledPlacement = locatedInner.placement.multiply(
   getFacePlacement(inner, y2, x2),
 );
 
-const angledJoin = makeGantryJoin(
-  "gantry top join",
-  angledPlacement
+const angledJoin = makeGantryJoin("gantry top join", angledPlacement);
+angledJoin.assignOutsidePath(
+  angledJoin.outside.offset([0, 0, -woodThickness, 0]),
 );
-angledJoin.assignOutsidePath(angledJoin.outside.offset([0, 0, -woodThickness, 0]));
 angledJoin.outside.roundFilletAll(roundingRadius);
 joinParts(gantryHalf, inner, angledJoin, layout);
 joinParts(gantryHalf, outer, angledJoin, layout);
@@ -220,10 +201,7 @@ joinParts(gantryHalf, outer, angledJoin, layout);
 const backPlacement = locatedInner.placement.multiply(
   getFacePlacement(inner, zero2, y2),
 );
-const backJoin = makeGantryJoin(
-  "gantry back join",
-  backPlacement,
-);
+const backJoin = makeGantryJoin("gantry back join", backPlacement);
 backJoin.outside.roundFilletAll(roundingRadius);
 joinParts(gantryHalf, inner, backJoin, layout);
 joinParts(gantryHalf, bottom, backJoin, [tm(0.3), cnf(0.6)]);

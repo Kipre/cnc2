@@ -4,7 +4,7 @@
 import { nz3, x3, zero2 } from "./cade/lib/defaults.js";
 import { FlatPart } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
-import { metalMaterial } from "./cade/lib/materials.js";
+import { blackMetalMaterial, metalMaterial } from "./cade/lib/materials.js";
 import { cut, extrusion, fuse } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
 import { BaseSlot, CenterDrawerSlot, TenonMortise } from "./cade/lib/slots.js";
@@ -23,6 +23,9 @@ const isoFastenerSizes = {
     nutThickness: 2.4,
     washerOuterDiameter: 7,
     washerInnerDiameter: 3.2,
+    hexOuter: 5.5,
+    hexSize: 2.5,
+    hexHeadHeight: 3,
     lengths: [5, 6, 8, 10, 12, 16, 20, 25, 30, 35, 40, 50],
   },
   M4: {
@@ -33,6 +36,9 @@ const isoFastenerSizes = {
     nutThickness: 3.2,
     washerOuterDiameter: 9,
     washerInnerDiameter: 4.3,
+    hexOuter: 7,
+    hexSize: 3,
+    hexHeadHeight: 4,
     lengths: [6, 8, 10, 12, 14, 16, 18, 20, 25, 30, 35, 40, 45, 50, 55, 60],
   },
   M5: {
@@ -43,6 +49,9 @@ const isoFastenerSizes = {
     nutThickness: 4,
     washerOuterDiameter: 10,
     washerInnerDiameter: 5.3,
+    hexOuter: 8.5,
+    hexSize: 4,
+    hexHeadHeight: 5,
     lengths: [
       6, 8, 10, 12, 14, 16, 18, 20, 22, 25, 30, 35, 40, 45, 50, 55, 60, 70, 100,
     ],
@@ -55,6 +64,9 @@ const isoFastenerSizes = {
     nutThickness: 5,
     washerOuterDiameter: 12,
     washerInnerDiameter: 6.4,
+    hexOuter: 10,
+    hexSize: 5,
+    hexHeadHeight: 6,
     lengths: [
       8, 10, 12, 14, 16, 18, 20, 22, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75,
       80, 90, 100, 110, 130, 150,
@@ -68,6 +80,9 @@ const isoFastenerSizes = {
     nutThickness: 6.5,
     washerOuterDiameter: 16,
     washerInnerDiameter: 8.4,
+    hexOuter: 13,
+    hexSize: 6,
+    hexHeadHeight: 8,
     lengths: [
       8, 10, 12, 14, 16, 18, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80,
       90, 100, 110, 120, 140, 150, 180,
@@ -100,6 +115,40 @@ function makeBolt(size, length) {
 
   const bolt = new Part(`${size} bolt ${length}`, fuse(head, shank));
   bolt.material = metalMaterial;
+  bolt.symmetries = [0, 0, NaN];
+  return bolt;
+}
+
+/**
+ * @param {"M3" | "M4" | "M5" | "M6" | "M8"} size
+ * @param {number} length
+ */
+function makeHexBolt(size, length) {
+  const { diameter, hexOuter, hexSize, hexHeadHeight } = isoFastenerSizes[size];
+  const headInner = Path.fromPolyline(
+    Array.from({ length: 6 }, (_, i) =>
+      rotatePoint(zero2, [hexSize / 2, 0], (i * 2 * Math.PI) / 6),
+    ),
+  );
+
+  const head = cut(extrusion(
+    a2m([0, 0, - hexHeadHeight]),
+    hexHeadHeight,
+    Path.makeCircle(hexOuter / 2),
+  ),
+    extrusion(
+      a2m([0, 0, - hexHeadHeight]),
+      hexHeadHeight * 2 / 3,
+      headInner
+    ));
+  const shank = extrusion(
+    a2m(),
+    length,
+    Path.makeCircle(diameter / 2),
+  );
+
+  const bolt = new Part(`${size} hex bolt ${length}`, fuse(head, shank));
+  bolt.material = blackMetalMaterial;
   bolt.symmetries = [0, 0, NaN];
   return bolt;
 }
@@ -175,6 +224,7 @@ function makeWasher(size) {
 }
 
 const bolts = {};
+const hexBolts = {};
 const rest = {};
 
 export function getFastenerKit(size, length, addLengthForNut = true) {
@@ -199,13 +249,19 @@ export function getFastenerKit(size, length, addLengthForNut = true) {
     bolts[key] = bolt;
   }
 
+  let hexBolt = hexBolts[key];
+  if (hexBolt == null) {
+    hexBolt = makeHexBolt(mSize, availableLength);
+    hexBolts[key] = hexBolt;
+  }
+
   if (!(mSize in rest)) {
     const nut = makeNut(mSize);
     const washer = makeWasher(mSize);
     rest[mSize] = { nut, washer };
   }
 
-  return { ...rest[mSize], bolt };
+  return { ...rest[mSize], bolt, hexBolt };
 }
 
 export const {
