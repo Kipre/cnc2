@@ -103,15 +103,11 @@ function makeBolt(size, length) {
   );
 
   const head = extrusion(
-    a2m([0, 0, -washerThickness - boltHeadThickness]),
+    a2m([0, 0, -boltHeadThickness]),
     boltHeadThickness,
     headPath,
   );
-  const shank = extrusion(
-    a2m([0, 0, -washerThickness]),
-    length,
-    Path.makeCircle(diameter / 2),
-  );
+  const shank = extrusion(a2m(), length, Path.makeCircle(diameter / 2));
 
   const bolt = new Part(`${size} bolt ${length}`, fuse(head, shank));
   bolt.material = metalMaterial;
@@ -131,21 +127,15 @@ function makeHexBolt(size, length) {
     ),
   );
 
-  const head = cut(extrusion(
-    a2m([0, 0, - hexHeadHeight]),
-    hexHeadHeight,
-    Path.makeCircle(hexOuter / 2),
-  ),
+  const head = cut(
     extrusion(
-      a2m([0, 0, - hexHeadHeight]),
-      hexHeadHeight * 2 / 3,
-      headInner
-    ));
-  const shank = extrusion(
-    a2m(),
-    length,
-    Path.makeCircle(diameter / 2),
+      a2m([0, 0, -hexHeadHeight]),
+      hexHeadHeight,
+      Path.makeCircle(hexOuter / 2),
+    ),
+    extrusion(a2m([0, 0, -hexHeadHeight]), (hexHeadHeight * 2) / 3, headInner),
   );
+  const shank = extrusion(a2m(), length, Path.makeCircle(diameter / 2));
 
   const bolt = new Part(`${size} hex bolt ${length}`, fuse(head, shank));
   bolt.material = blackMetalMaterial;
@@ -165,7 +155,7 @@ function makeNut(size) {
   );
 
   const head = extrusion(
-    a2m([0, 0, -washerThickness - nutThickness]),
+    a2m([0, 0, -nutThickness]),
     nutThickness,
     headPath,
     Path.makeCircle(diameter / 2),
@@ -223,11 +213,10 @@ function makeWasher(size) {
   return washer;
 }
 
-const bolts = {};
-const hexBolts = {};
-const rest = {};
+const tops = {};
+const bottoms = {};
 
-export function getFastenerKit(size, length, addLengthForNut = true) {
+function getISOSize(size, length, addLengthForNut = true) {
   let mSize = "M3";
   if (size > 4) mSize = "M4";
   if (size > 5) mSize = "M5";
@@ -242,45 +231,77 @@ export function getFastenerKit(size, length, addLengthForNut = true) {
 
   const availableLength = iso.lengths.find((x) => x >= requiredLength);
   const key = `${mSize}_${availableLength}`;
-
-  let bolt = bolts[key];
-  if (bolt == null) {
-    bolt = makeBolt(mSize, availableLength);
-    bolts[key] = bolt;
-  }
-
-  let hexBolt = hexBolts[key];
-  if (hexBolt == null) {
-    hexBolt = makeHexBolt(mSize, availableLength);
-    hexBolts[key] = hexBolt;
-  }
-
-  if (!(mSize in rest)) {
-    const nut = makeNut(mSize);
-    const washer = makeWasher(mSize);
-    rest[mSize] = { nut, washer };
-  }
-
-  return { ...rest[mSize], bolt, hexBolt };
+  return { key, mSize, availableLength };
 }
 
-export const {
-  washer: m5Washer,
-  nut: m5Nut,
-  bolt: m5Bolt,
-} = getFastenerKit(5.3, 22);
-export const {
-  washer: m6Washer,
-  nut: m6Nut,
-  bolt: m6Bolt,
-} = getFastenerKit(6.3, 26);
+export function getFastenerKit(size, length, addLengthForNut = true) {
+  const { key, mSize, availableLength } = getISOSize(
+    size,
+    length,
+    addLengthForNut,
+  );
+
+  let bottom = bottoms[mSize];
+  if (bottom == null) {
+    const nut = makeNut(mSize);
+    const washer = makeWasher(mSize);
+    bottom = new Assembly(`iso bottom ${mSize}`);
+    bottom.addChild(nut, a2m([0, 0, -washerThickness]));
+    bottom.addChild(washer);
+    bottom.symmetries = [0, 0, NaN];
+    bottoms[mSize] = bottom;
+  }
+
+  let top = tops[key];
+  if (top == null) {
+    const bolt = makeBolt(mSize, availableLength);
+    const washer = bottom.children[1].child;
+    top = new Assembly(`iso top ${key}`);
+    top.addChild(bolt, a2m([0, 0, -washerThickness]));
+    top.addChild(washer);
+    top.symmetries = [0, 0, NaN];
+    tops[key] = top;
+  }
+
+  return { top, bottom };
+}
+
+export function getHexFastener(size, length, addLengthForNut = true) {
+  const {
+    key: rawKey,
+    mSize,
+    availableLength,
+  } = getISOSize(size, length, addLengthForNut);
+  const { bottom } = getFastenerKit(size, length, addLengthForNut);
+
+  const key = `hex ${rawKey}`;
+
+  let top = tops[key];
+  if (top == null) {
+    top = makeHexBolt(mSize, availableLength);
+    tops[key] = top;
+  }
+
+  return { top, bottom };
+}
+
+export function getHexAndBarrelNut(...args) {
+  return { top: getHexFastener(...args).top, bottom: cylinderNut };
+}
+
+export function getBoltAndBarrelNut(...args) {
+  return { top: getFastenerKit(...args).top, bottom: cylinderNut };
+}
+
+export const { top: m5Top } = getFastenerKit(5.3, 22);
+
+export const { top: m6Top } = getFastenerKit(6.3, 26);
 
 // export const m6Washer = makeWasher("M6");
 // export const m6Bolt = makeBolt("M6", 35);
 
 export const m6BoltAndBarrelNut = new Assembly("fastener");
-m6BoltAndBarrelNut.addChild(m6Bolt);
-m6BoltAndBarrelNut.addChild(m6Washer);
+m6BoltAndBarrelNut.addChild(m6Top);
 m6BoltAndBarrelNut.addChild(cylinderNut, a2m([0, 0, 30]));
 m6BoltAndBarrelNut.symmetries = [0, 0, NaN];
 

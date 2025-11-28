@@ -1,8 +1,6 @@
 // @ts-check
 
-import { nx3, nz3, x3, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
-import { FlatPart } from "./cade/lib/flat.js";
-import { Assembly } from "./cade/lib/lib.js";
+import { y3, z3, zero2 } from "./cade/lib/defaults.js";
 import { metalMaterial } from "./cade/lib/materials.js";
 import {
   cut,
@@ -12,14 +10,11 @@ import {
 } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
 import { makeFourDrills } from "./cade/lib/utils.js";
-import { eps, norm, placeAlong, rotatePoint } from "./cade/tools/2d.js";
-import { proj2d } from "./cade/tools/3d.js";
+import { rotatePoint } from "./cade/tools/2d.js";
 import { intersectLineAndArc } from "./cade/tools/circle.js";
 import { Path } from "./cade/tools/path.js";
-import { debugGeometry } from "./cade/tools/svg.js";
-import { a2m, transformPoint3 } from "./cade/tools/transform.js";
+import { a2m } from "./cade/tools/transform.js";
 import { defaultSpindleSize, yRailLength } from "./dimensions.js";
-import { getFastenerKit, m5CylinderNut } from "./fasteners.js";
 
 const yRailWidth = 30;
 const yRailHeight = 29;
@@ -64,220 +59,6 @@ export function* yRailHoleFinder() {
   }
 }
 
-/**
- * @param {Assembly} parent
- * @param {Part} subpart
- * @param {FlatPart} part
- * @param {(part: Part) => Generator<{hole: Path, depth: number, transform: DOMMatrix}>} holeIterator
- */
-export function fastenSubpartToFlatPart(parent, subpart, part, holeIterator) {
-  const partPlacement = parent.findChild(part).placement;
-
-  for (const located of parent.findChildren(subpart)) {
-    const subPlacement = located.placement;
-
-    const subToPart = partPlacement.inverse().multiply(subPlacement);
-    const fastenToTheFront =
-      transformPoint3(subToPart, zero3)[2] > part.thickness / 2;
-
-    for (const { hole, depth, transform: holeTransform } of holeIterator(
-      subpart,
-    )) {
-      const [, p1, , p2] = hole.getSegmentAt(1);
-      const diameter = norm(p1, p2);
-
-      const requiredClampingLength = depth + part.thickness;
-      const { bolt, nut, washer } = getFastenerKit(
-        diameter,
-        requiredClampingLength,
-      );
-
-      const location = [...placeAlong(p1, p2, { fraction: 0.5 }), 0];
-      const holeToSubToPart = subToPart.multiply(holeTransform);
-      const loc = proj2d(transformPoint3(holeToSubToPart, location));
-
-      const locatedPath = Path.makeCircle(diameter / 2).translate(loc);
-      part.addInsides(locatedPath);
-
-      const fastenerLocation = partPlacement.multiply(
-        a2m(
-          [...loc, fastenToTheFront ? 0 : part.thickness],
-          fastenToTheFront ? nz3 : z3,
-        ),
-      );
-      const topLocation = fastenerLocation.multiply(
-        a2m([0, 0, -depth - part.thickness]),
-      );
-
-      const bottomLocation = fastenerLocation.multiply(a2m(zero3, nz3));
-
-      subpart.pairings.push({ ...parent.addChild(bolt, topLocation), parent });
-      subpart.pairings.push({
-        ...parent.addChild(washer, topLocation),
-        parent,
-      });
-      subpart.pairings.push({
-        ...parent.addChild(washer, bottomLocation),
-        parent,
-      });
-      subpart.pairings.push({
-        ...parent.addChild(nut, bottomLocation),
-        parent,
-      });
-    }
-  }
-}
-
-/**
- * @param {Assembly} parent
- * @param {Part} subpart
- * @param {FlatPart} part
- * @param {(part: Part) => Generator<{hole: Path, depth: number, transform: DOMMatrix}>} holeIterator
- */
-export function boltThreadedSubpartToFlatPart(
-  parent,
-  subpart,
-  part,
-  holeIterator,
-) {
-  const partPlacement = parent.findChild(part).placement;
-
-  for (const located of parent.findChildren(subpart)) {
-    const subPlacement = located.placement;
-
-    const subToPart = partPlacement.inverse().multiply(subPlacement);
-    for (const { hole, depth, transform: holeTransform } of holeIterator(
-      subpart,
-    )) {
-      const [, p1, , p2] = hole.getSegmentAt(1);
-      const diameter = norm(p1, p2);
-      const center = [...placeAlong(p1, p2, { fraction: 0.5 }), 0];
-      const holeToSubToPart = subToPart.multiply(holeTransform);
-
-      const holeInPart = transformPoint3(holeToSubToPart, center);
-      const holeOnPart = proj2d(holeInPart);
-      const requiredClampingLength = depth + part.thickness;
-
-      const zee = holeInPart[2];
-
-      if (Math.abs(zee) > requiredClampingLength) {
-        console.error(
-          `cannot fasten ${subpart.name} to ${part.name} because they are too far apart for hole ${holeInPart}`,
-        );
-        continue;
-      }
-
-      const { bolt, washer } = getFastenerKit(
-        diameter,
-        requiredClampingLength,
-        false,
-      );
-
-      // TODO clearance holes
-      const locatedPath = Path.makeCircle(diameter / 2).translate(holeOnPart);
-      part.addInsides(locatedPath);
-
-      if (Math.abs(zee) > eps && Math.abs(zee - part.thickness) > eps)
-        throw new Error(
-          `"${subpart.name}" does't seem to be properly located to bolt to "${part.name}"`,
-        );
-
-      const onTheOtherSide = Math.abs(zee - part.thickness) < eps;
-      const fastenerLocation = partPlacement.multiply(
-        a2m(
-          [...holeOnPart, onTheOtherSide ? zee : 0],
-          onTheOtherSide ? z3 : nz3,
-        ),
-      );
-      const topLocation = fastenerLocation.multiply(
-        a2m([0, 0, -part.thickness]),
-      );
-
-      subpart.pairings.push({ ...parent.addChild(bolt, topLocation), parent });
-      subpart.pairings.push({
-        ...parent.addChild(washer, topLocation),
-        parent,
-      });
-    }
-  }
-}
-
-/**
- * @param {Assembly} parent
- * @param {Part} subpart
- * @param {FlatPart} part
- * @param {(part: Part) => Generator<{hole: Path, depth: number, transform: DOMMatrix}>} holeIterator
- */
-export function fastenSubpartToFlatPartEdge(
-  parent,
-  subpart,
-  part,
-  holeIterator,
-  useHexBolt = false,
-) {
-  const partPlacement = parent.findChild(part).placement;
-
-  for (const located of parent.findChildren(subpart)) {
-    const subPlacement = located.placement;
-
-    const subToPart = partPlacement.inverse().multiply(subPlacement);
-
-    for (const { hole, depth, transform: holeTransform } of holeIterator(
-      subpart,
-    )) {
-      const cylinderNutOffset = 10;
-      const [, p1, , p2] = hole.getSegmentAt(1);
-      const diameter = norm(p1, p2);
-
-      const cylinderDiameter = 10;
-      const requiredClampingLength =
-        depth + cylinderNutOffset + cylinderDiameter / 2;
-
-      const { hexBolt, bolt, washer } = getFastenerKit(
-        diameter,
-        requiredClampingLength,
-        false,
-      );
-
-      const center = placeAlong(p1, p2, { fraction: 0.5 });
-
-      const holeToSubToPart = subToPart.multiply(holeTransform);
-
-      const holeStart = transformPoint3(holeToSubToPart, [...center, depth]);
-      const holeEnd = transformPoint3(holeToSubToPart, [...center, 0]);
-      const barrelCenter = placeAlong(holeStart, holeEnd, {
-        fromEnd: cylinderNutOffset,
-      });
-
-      console.assert(
-        Math.abs(holeStart[2] - part.thickness / 2) < eps,
-        "hole is not centered",
-      );
-
-      const locatedPath = Path.makeCircle(cylinderDiameter / 2).translate(
-        barrelCenter,
-      );
-
-      part.addInsides(locatedPath);
-
-      const top = partPlacement.multiply(a2m(holeStart, nx3));
-      const bottom = top.multiply(
-        a2m([0, 0, depth + cylinderNutOffset], z3, y3),
-      );
-
-      if (!useHexBolt) {
-        subpart.pairings.push({ ...parent.addChild(bolt, top), parent });
-        subpart.pairings.push({ ...parent.addChild(washer, top), parent });
-      } else {
-        subpart.pairings.push({ ...parent.addChild(hexBolt, top), parent });
-      }
-      subpart.pairings.push({
-        ...parent.addChild(m5CylinderNut, bottom),
-        parent,
-      });
-    }
-  }
-}
 
 export const yRail = new Part("y rail", cut(body, holes));
 yRail.material = metalMaterial;

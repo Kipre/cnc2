@@ -16,6 +16,7 @@ import {
   joinParts,
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
+import { fastenSubpartToFlatPart } from "./cade/lib/fastening.js";
 import { makeShelfOnPlane } from "./cade/lib/shelf.js";
 import { DrawerSlot, makeTenon, TenonMortise } from "./cade/lib/slots.js";
 import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
@@ -44,9 +45,9 @@ import {
   yRailEndSpace,
   yRailPlacementOnTunnel,
 } from "./dimensions.js";
-import { CylinderNutFastener, defaultSlotLayout } from "./fasteners.js";
+import { CylinderNutFastener, defaultSlotLayout, getFastenerKit } from "./fasteners.js";
 import { motorHolesGetter, motorWithCoupler, nema23 } from "./motor.js";
-import { fastenSubpartToFlatPart, yRail, yRailHoleFinder } from "./rails.js";
+import { yRail, yRailHoleFinder } from "./rails.js";
 import {
   bf12,
   bk12,
@@ -219,8 +220,8 @@ let screwPlacement;
 
   woodenBase.addChild(screwAssy, screwPlacement);
 
-  fastenSubpartToFlatPart(woodenBase, nema23, innerBridge, motorHolesGetter);
-  fastenSubpartToFlatPart(woodenBase, bf12, secondInnerBridge, bkfHoleFinder);
+  fastenSubpartToFlatPart(woodenBase, nema23, innerBridge, motorHolesGetter, getFastenerKit);
+  fastenSubpartToFlatPart(woodenBase, bf12, secondInnerBridge, bkfHoleFinder, getFastenerKit);
 
   const location = woodenBase.findChild(bk12).placement;
   const bkSupportPlacement = location.multiply(
@@ -277,7 +278,7 @@ let screwPlacement;
   ]);
   joinParts(tunnel, bkSupport, outerTunnel, [], [new CylinderNutFastener(0.2)]);
 
-  fastenSubpartToFlatPart(woodenBase, bk12, bkSupport, bkfHoleFinder);
+  fastenSubpartToFlatPart(woodenBase, bk12, bkSupport, bkfHoleFinder, getFastenerKit);
 }
 
 innerBridge.mirror();
@@ -304,7 +305,7 @@ export const yRailPlacement = a2m(
 
 tunnel.addChild(yRail, yRailPlacement);
 
-fastenSubpartToFlatPart(tunnel, yRail, tunnelJoins[0], yRailHoleFinder);
+fastenSubpartToFlatPart(tunnel, yRail, tunnelJoins[0], yRailHoleFinder, getFastenerKit);
 
 woodenBase.addChild(
   tunnel.mirror(),

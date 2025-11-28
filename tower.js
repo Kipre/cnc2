@@ -41,7 +41,7 @@ import {
   woodThickness,
   zRailLength,
 } from "./dimensions.js";
-import { CylinderNutFastener } from "./fasteners.js";
+import { CylinderNutFastener, getFastenerKit, getHexAndBarrelNut, getHexFastener } from "./fasteners.js";
 import {
   flatChariot,
   flatChariotHolesIterator,
@@ -52,7 +52,7 @@ import {
   shortFlatRail,
 } from "./flatRails.js";
 import { nema23 } from "./motor.js";
-import { boltThreadedSubpartToFlatPart, fastenSubpartToFlatPartEdge } from "./rails.js";
+import { boltThreadedSubpartToFlatPart, fastenSubpartToFlatPartEdge } from "./cade/lib/fastening.js";
 import {
   baseSurfaceToRollerSurface,
   bf12,
@@ -103,7 +103,8 @@ boltThreadedSubpartToFlatPart(
   tower,
   flatChariot,
   frontPlate,
-  flatChariotHolesIterator,
+  flatChariotHolesIterator, 
+  getFastenerKit,
 );
 
 const backPlateWidth = 100;
@@ -176,7 +177,7 @@ function* shortRailFasteners() {
     yield hole;
   }
 }
-fastenSubpartToFlatPartEdge(railSupport, shortFlatRail, railBase, shortRailFasteners, true);
+fastenSubpartToFlatPartEdge(railSupport, shortFlatRail, railBase, shortRailFasteners, getHexAndBarrelNut);
 
 
 const otherSupport = railSupport.clone();
@@ -195,7 +196,7 @@ const rollerPlacement = otherSide(backplatePlacement, true)
   .multiply(rollerContactSurface.rotate(90).inverse());
 
 tower.addChild(roller, rollerPlacement);
-boltThreadedSubpartToFlatPart(tower, roller, backPlate, rollerHoleFinder);
+boltThreadedSubpartToFlatPart(tower, roller, backPlate, rollerHoleFinder, getFastenerKit);
 
 const joinPath = new ShelfMaker(bottomPlateLocation, {
   woodThickness,

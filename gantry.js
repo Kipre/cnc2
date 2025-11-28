@@ -41,7 +41,7 @@ import {
   xRailSupportWidth,
   yRailPlacementOnTunnel,
 } from "./dimensions.js";
-import { CylinderNutFastener } from "./fasteners.js";
+import { CylinderNutFastener, getBoltAndBarrelNut, getFastenerKit } from "./fasteners.js";
 import { flatChariot, flatRail } from "./flatRails.js";
 import {
   motorCenteringHole,
@@ -50,16 +50,18 @@ import {
   nema23,
 } from "./motor.js";
 import {
-  boltThreadedSubpartToFlatPart,
   chariot,
   chariotBoltClearingRect,
   chariotContactSurface,
   chariotHoleFinder,
   chariotLength,
-  fastenSubpartToFlatPart,
-  fastenSubpartToFlatPartEdge,
   railTopToBottom,
 } from "./rails.js";
+import {
+  boltThreadedSubpartToFlatPart,
+  fastenSubpartToFlatPart,
+  fastenSubpartToFlatPartEdge,
+} from "./cade/lib/fastening.js";
 import {
   baseSurfaceToRollerSurface,
   bf12,
@@ -227,14 +229,26 @@ gantryHalf.addChild(
   chariotPlacement.translate(0, 0, carrierWheelbase - chariotLength),
 );
 
-boltThreadedSubpartToFlatPart(gantryHalf, chariot, bottom, chariotHoleFinder);
+boltThreadedSubpartToFlatPart(
+  gantryHalf,
+  chariot,
+  bottom,
+  chariotHoleFinder,
+  getFastenerKit,
+);
 
 const rollerPlacement = locatedOuter.placement
   .translate(...rollerCenter)
   .multiply(rollerContactSurface.rotate(90).inverse());
 
 gantryHalf.addChild(roller, rollerPlacement);
-boltThreadedSubpartToFlatPart(gantryHalf, roller, outer, rollerHoleFinder);
+boltThreadedSubpartToFlatPart(
+  gantryHalf,
+  roller,
+  outer,
+  rollerHoleFinder,
+  getFastenerKit,
+);
 
 const secondSupport = gantryHalf.mirror(z3);
 const secondOuter = secondSupport.forkChild(outer);
@@ -311,8 +325,20 @@ const motorCenterOnSupport = locateOriginOnFlatPart(
 );
 support.addInsides(motorCenteringHole.translate(motorCenterOnSupport));
 
-fastenSubpartToFlatPart(gantry, nema23, support, motorHolesGetter);
-fastenSubpartToFlatPart(gantry, bk12, secondInner, bkfHoleFinder);
+fastenSubpartToFlatPart(
+  gantry,
+  nema23,
+  support,
+  motorHolesGetter,
+  getFastenerKit,
+);
+fastenSubpartToFlatPart(
+  gantry,
+  bk12,
+  secondInner,
+  bkfHoleFinder,
+  getFastenerKit,
+);
 
 // end holder
 const holderSize = 80;
@@ -343,19 +369,27 @@ joinParts(gantryHalf, endHolder, inner, [
   cnf(0.5),
   new HornSlot(false),
 ]);
-fastenSubpartToFlatPartEdge(gantry, bf12, endHolder, bkfTwoHoleFinder);
+fastenSubpartToFlatPartEdge(
+  gantry,
+  bf12,
+  endHolder,
+  bkfTwoHoleFinder,
+  getBoltAndBarrelNut,
+);
 
 boltThreadedSubpartToFlatPart(
   gantry,
   aluExtrusion,
   inner,
   aluStartHolesIterator,
+  getFastenerKit,
 );
 boltThreadedSubpartToFlatPart(
   gantry,
   aluExtrusion,
   secondInner,
   aluEndHolesIterator,
+  getFastenerKit,
 );
 
 const towerPlacement = gantry
