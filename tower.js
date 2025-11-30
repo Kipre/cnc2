@@ -2,8 +2,13 @@
 /** @import * as types from './cade/tools/types' */
 
 import { railToScrewPlacement, washerUnderRail } from "./assemblyInvariants.js";
+import {
+  boltThreadedSubpartToFlatPart,
+  fastenSubpartToFlatPartEdge,
+} from "./cade/lib/fastening.js";
 import { FlatPart, getFacePlacement, joinParts } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
+import { ShelfMaker } from "./cade/lib/shelf.js";
 import {
   CenterDrawerSlot,
   TenonMortise,
@@ -13,7 +18,6 @@ import {
   nx2,
   nx3,
   ny2,
-  ny3,
   nz3,
   x2,
   x3,
@@ -24,7 +28,6 @@ import {
   zero3,
 } from "./cade/tools/defaults.js";
 import { Path } from "./cade/tools/path.js";
-import { debugGeometry } from "./cade/tools/svg.js";
 import {
   a2m,
   locateWithConstraints,
@@ -37,7 +40,6 @@ import {
   interFlatRail,
   joinOffset,
   motorSupportWidth,
-  roundingRadius,
   woodThickness,
   zRailLength,
 } from "./dimensions.js";
@@ -45,7 +47,6 @@ import {
   CylinderNutFastener,
   getFastenerKit,
   getHexAndBarrelNut,
-  getHexFastener,
 } from "./fasteners.js";
 import {
   flatChariot,
@@ -58,10 +59,6 @@ import {
 } from "./flatRails.js";
 import { nema23 } from "./motor.js";
 import {
-  boltThreadedSubpartToFlatPart,
-  fastenSubpartToFlatPartEdge,
-} from "./cade/lib/fastening.js";
-import {
   baseSurfaceToRollerSurface,
   bf12,
   roller,
@@ -71,13 +68,13 @@ import {
   shaftY,
   shortScrewAssy,
 } from "./screw.js";
-import { makeShelfOnPlane, ShelfMaker } from "./cade/lib/shelf.js";
 
 const tm = (x) => new TenonMortise(x);
 const cnf = (x) => new CylinderNutFastener(x);
 
 const interHorizontalPlates =
   aluExtrusionHeight + 2 * flatRailTotalHeight + washerUnderRail;
+const frontPlateToExtrusion = 10;
 
 const frontPlateHeight = zRailLength;
 export const frontPlate = new FlatPart(
@@ -97,7 +94,7 @@ for (const x of [-interChariot / 2, interChariot / 2 - flatChariotLength]) {
     tower.addChild(
       flatChariot,
       a2m(
-        [aluExtrusionThickness / 2 + 10, flatRailTotalHeight + y, x],
+        [aluExtrusionThickness / 2 + frontPlateToExtrusion, flatRailTotalHeight + y, x],
         z3,
         y === 0 ? nx3 : x3,
       ),
@@ -105,11 +102,11 @@ for (const x of [-interChariot / 2, interChariot / 2 - flatChariotLength]) {
   }
 }
 
-const backPlateWidth = 100;
+const backPlateWidth = 90;
 const backPlate = new FlatPart(
   "tower back plate",
   woodThickness,
-  Path.makeRect(backPlateWidth, aluExtrusionHeight * 1.5).recenter({
+  Path.makeRect(backPlateWidth, aluExtrusionHeight * 1.6).recenter({
     onlyX: true,
   }),
 );
@@ -118,8 +115,7 @@ const plateToPlate =
   shaftY +
   rollerThickness / 2 +
   aluExtrusionThickness +
-  1 +
-  flatRailTotalHeight +
+  frontPlateToExtrusion +
   woodThickness;
 
 const backplatePlacement = towerPlatePlacement.translate(
@@ -192,7 +188,7 @@ const screwAxisPlacement = tower
 const screwPoint = transformPoint3(screwAxisPlacement, zero3);
 
 const rollerPlacement = otherSide(backplatePlacement, true)
-  .translate(0, -screwPoint[1])
+  .translate(0, -screwPoint[1] - woodThickness)
   .multiply(rollerContactSurface.rotate(90).inverse());
 
 tower.addChild(roller, rollerPlacement);
@@ -241,14 +237,14 @@ const bottom = new FlatPart(
 );
 
 const centeredBolt = [cnf(0.5)];
-const triple = [cnf(0.8), tm(0.5), cnf(0.2)];
+const triple = [cnf(0.85), tm(0.5), cnf(0.15)];
 // const quint = [cnf(0.1), tm(0.3), cnf(0.5), tm(0.7), cnf(0.9)];
 
 tower.addChild(bottom, bottomPlateLocation);
 joinParts(tower, bottom, backPlate, [
-  cnf(0.2),
+  cnf(0.15),
   new CenterDrawerSlot(0.5, true),
-  cnf(0.8),
+  cnf(0.85),
 ]);
 joinParts(tower, backPlate, bottom, centeredBolt);
 
@@ -296,7 +292,7 @@ for (const part of [railBase, otherRailBase]) {
   joinParts(tower, middle, part, centeredBolt);
   const side = part === railBase;
   joinParts(tower, part, frontPlate, [
-    cnf(0.15),
+    cnf(0.08),
     new CenterDrawerSlot(0.3, side),
     cnf(0.48),
     cnf(0.65),
