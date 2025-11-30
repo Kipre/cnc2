@@ -76,7 +76,8 @@ import { makeShelfOnPlane, ShelfMaker } from "./cade/lib/shelf.js";
 const tm = (x) => new TenonMortise(x);
 const cnf = (x) => new CylinderNutFastener(x);
 
-const interHorizontalPlates = aluExtrusionHeight + 2 * flatRailTotalHeight + washerUnderRail;
+const interHorizontalPlates =
+  aluExtrusionHeight + 2 * flatRailTotalHeight + washerUnderRail;
 
 const frontPlateHeight = zRailLength;
 export const frontPlate = new FlatPart(
@@ -96,25 +97,13 @@ for (const x of [-interChariot / 2, interChariot / 2 - flatChariotLength]) {
     tower.addChild(
       flatChariot,
       a2m(
-        [
-          aluExtrusionThickness / 2 + 10,
-          flatRailTotalHeight + y,
-          x,
-        ],
+        [aluExtrusionThickness / 2 + 10, flatRailTotalHeight + y, x],
         z3,
         y === 0 ? nx3 : x3,
       ),
     );
   }
 }
-
-// boltThreadedSubpartToFlatPart(
-//   tower,
-//   flatChariot,
-//   frontPlate,
-//   flatChariotHolesIterator,
-//   getFastenerKit,
-// );
 
 const backPlateWidth = 100;
 const backPlate = new FlatPart(
@@ -215,17 +204,41 @@ boltThreadedSubpartToFlatPart(
   getFastenerKit,
 );
 
-const joinPath = new ShelfMaker(bottomPlateLocation, {
+const [chariot1, two, chariot2, four] = tower.findChildren(flatChariot);
+
+const bottomJoinMaker = new ShelfMaker(bottomPlateLocation, {
   woodThickness,
   zonePoint: [-100, 0],
 })
   .addFlatPart(tower.findChild(frontPlate))
   .addFlatPart(tower.findChild(backPlate))
   .addFlatPart(rightRailSupport)
-  .addFlatPart(leftRailSupport)
-  .make();
+  .addFlatPart(leftRailSupport);
 
-const bottom = new FlatPart("tower bottom join", woodThickness, joinPath);
+const middleJoinLocation = a2m([0, interHorizontalPlates + 1, 0], y3);
+const middleShelfMaker = new ShelfMaker(middleJoinLocation, {
+  woodThickness,
+  joinOffset,
+})
+  .addFlatPart(tower.findChild(frontPlate))
+  .addFlatPart(tower.findChild(backPlate));
+
+for (const maker of [middleShelfMaker, bottomJoinMaker]) {
+  for (const chariot of [chariot1, chariot2]) {
+    for (const hole of flatChariotHolesIterator()) {
+      maker.addFeature(
+        hole.hole.offset(8),
+        chariot.placement.multiply(hole.transform),
+      );
+    }
+  }
+}
+
+const bottom = new FlatPart(
+  "tower bottom join",
+  woodThickness,
+  bottomJoinMaker.make(),
+);
 
 const centeredBolt = [cnf(0.5)];
 const triple = [cnf(0.8), tm(0.5), cnf(0.2)];
@@ -246,19 +259,30 @@ joinParts(tower, frontPlate, bottom, [
 ]);
 joinParts(tower, bottom, frontPlate, centeredBolt);
 
-const middleJoinLocation = a2m([0, interHorizontalPlates + 1, 0], y3);
-const middlePlatePath = makeShelfOnPlane(
-  middleJoinLocation,
-  { woodThickness, joinOffset },
-  tower.findChild(frontPlate),
-  tower.findChild(backPlate),
-);
 const middle = new FlatPart(
   "tower middle join",
   woodThickness,
-  middlePlatePath,
+  middleShelfMaker.make(true),
 );
 const locatedMiddle = tower.addChild(middle, middleJoinLocation);
+
+boltThreadedSubpartToFlatPart(
+  tower,
+  flatChariot,
+  middle,
+  flatChariotHolesIterator,
+  getFastenerKit,
+  { ignoreMisplacedHoles: true },
+);
+
+boltThreadedSubpartToFlatPart(
+  tower,
+  flatChariot,
+  bottom,
+  flatChariotHolesIterator,
+  getFastenerKit,
+  { ignoreMisplacedHoles: true },
+);
 
 joinParts(tower, middle, frontPlate, [
   new TroughAngleSupport(locatedMiddle, leftRailSupport, true),
