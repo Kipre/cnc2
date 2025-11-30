@@ -9,6 +9,7 @@ import {
   flatRailPlacementInGantry,
   screwPlacementInGantry,
   toExtrusionFront,
+  washerUnderRail,
 } from "./assemblyInvariants.js";
 import { nx3, nz3, x2, y2, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
 import {
@@ -148,7 +149,7 @@ gantry.addChild(gantryHalf);
 gantry.addChild(aluExtrusion, a2m([-toExtrusionFront, gantrySinking, 0]));
 
 gantry.addChild(flatRail, flatRailPlacementInGantry);
-gantry.addChild(flatRail, flatRailPlacementInGantry.translate(interFlatRail));
+gantry.addChild(flatRail, flatRailPlacementInGantry.translate(0, -interFlatRail - 2 * washerUnderRail).rotate(180));
 
 gantry.addChild(screwAssy, screwPlacementInGantry);
 

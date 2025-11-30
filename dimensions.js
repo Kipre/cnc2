@@ -57,7 +57,7 @@ export const bfkSupportExtension = woodThickness - 1;
 export const aluExtrusionHeight = 149;
 export const aluExtrusionThickness = 30;
 
-export const interFlatRail = 4 * aluExtrusionThickness;
+export const interFlatRail = aluExtrusionHeight;
 
 export const gantryPosition = 450;
 export const xPosition = 450;
