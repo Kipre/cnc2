@@ -4,9 +4,16 @@
 import { railToScrewPlacement, washerUnderRail } from "./assemblyInvariants.js";
 import {
   boltThreadedSubpartToFlatPart,
+  clearBoltOnFlatPart,
+  fastenSubpartToFlatPart,
   fastenSubpartToFlatPartEdge,
 } from "./cade/lib/fastening.js";
-import { FlatPart, getFacePlacement, joinParts, spindleCleared2LineTo } from "./cade/lib/flat.js";
+import {
+  FlatPart,
+  getFacePlacement,
+  joinParts,
+  spindleCleared2LineTo,
+} from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { ShelfMaker } from "./cade/lib/shelf.js";
 import {
@@ -14,6 +21,7 @@ import {
   TenonMortise,
   TroughAngleSupport,
 } from "./cade/lib/slots.js";
+import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import {
   nx2,
   nx3,
@@ -41,6 +49,7 @@ import {
   interFlatRail,
   joinOffset,
   motorSupportWidth,
+  roundingRadius,
   woodThickness,
   zRailLength,
 } from "./dimensions.js";
@@ -58,14 +67,19 @@ import {
   flatRailTotalHeight,
   shortFlatRail,
 } from "./flatRails.js";
-import { nema23 } from "./motor.js";
+import { motorCenteringHole, motorHolesGetter, nema23 } from "./motor.js";
 import {
   baseSurfaceToRollerSurface,
   bf12,
+  bk12,
+  bkfHoleFinder,
+  bkfTopHoleFinder,
+  bkfTwoHoleFinder,
   roller,
   rollerContactSurface,
   rollerHoleFinder,
   rollerThickness,
+  screwAssy,
   shaftY,
   shortScrewAssy,
 } from "./screw.js";
@@ -97,7 +111,11 @@ for (const x of [-interChariot / 2, interChariot / 2 - flatChariotLength]) {
     tower.addChild(
       flatChariot,
       a2m(
-        [aluExtrusionThickness / 2 + frontPlateToExtrusion, flatRailTotalHeight + y, x],
+        [
+          aluExtrusionThickness / 2 + frontPlateToExtrusion,
+          flatRailTotalHeight + y,
+          x,
+        ],
         z3,
         y === 0 ? nx3 : x3,
       ),
@@ -149,7 +167,11 @@ const railBase = new FlatPart(
   woodThickness,
   Path.makeRect(railBottom, railSupportLength),
 );
-const railBasePlacement = a2m([-woodThickness, -woodThickness, woodThickness / 2], nz3, nx3);
+const railBasePlacement = a2m(
+  [-woodThickness, -woodThickness, woodThickness / 2],
+  nz3,
+  nx3,
+);
 railSupport.addChild(railBase, railBasePlacement);
 const rightRailSupport = tower.findChild(railBase);
 
@@ -212,7 +234,7 @@ const bottomJoinMaker = new ShelfMaker(bottomPlateLocation, {
   .addFlatPart(tower.findChild(frontPlate))
   .addFlatPart(tower.findChild(backPlate))
   .addSingleSideOfPart(rightRailSupport, true)
-  .addSingleSideOfPart(leftRailSupport)
+  .addSingleSideOfPart(leftRailSupport);
 
 const middleJoinLocation = a2m([0, interHorizontalPlates + 1, 0], y3);
 const middleShelfMaker = new ShelfMaker(middleJoinLocation, {
@@ -378,3 +400,37 @@ top.assignOutsidePath(minimalTop);
 
 joinParts(tower, top, railBase, centeredBolt);
 joinParts(tower, top, otherRailBase, centeredBolt);
+
+fastenSubpartToFlatPart(
+  tower,
+  bf12,
+  frontPlate,
+  bkfTopHoleFinder,
+  getFastenerKit,
+);
+fastenSubpartToFlatPart(
+  tower,
+  bk12,
+  frontPlate,
+  bkfTopHoleFinder,
+  getFastenerKit,
+);
+const [, nut] = fastenSubpartToFlatPart(
+  tower,
+  nema23,
+  top,
+  motorHolesGetter,
+  getFastenerKit,
+);
+clearBoltOnFlatPart(tower, frontPlate, nut.child);
+
+const motorCenterOnSupport = locateOriginOnFlatPart(
+  tower,
+  top,
+  screwAssy.findChild(nema23).child,
+);
+top.addInsides(motorCenteringHole.translate(motorCenterOnSupport));
+
+joinParts(tower, frontPlate, top, centeredBolt, [], centeredBolt);
+joinParts(tower, rightSideSupport, top, centeredBolt);
+joinParts(tower, leftSideSupport, top, centeredBolt);

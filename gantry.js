@@ -42,7 +42,11 @@ import {
   xRailSupportWidth,
   yRailPlacementOnTunnel,
 } from "./dimensions.js";
-import { CylinderNutFastener, getBoltAndBarrelNut, getFastenerKit } from "./fasteners.js";
+import {
+  CylinderNutFastener,
+  getBoltAndBarrelNut,
+  getFastenerKit,
+} from "./fasteners.js";
 import { flatChariot, flatRail } from "./flatRails.js";
 import {
   motorCenteringHole,
@@ -60,6 +64,7 @@ import {
 } from "./rails.js";
 import {
   boltThreadedSubpartToFlatPart,
+  clearBoltOnFlatPart,
   fastenSubpartToFlatPart,
   fastenSubpartToFlatPartEdge,
 } from "./cade/lib/fastening.js";
@@ -149,7 +154,12 @@ gantry.addChild(gantryHalf);
 gantry.addChild(aluExtrusion, a2m([-toExtrusionFront, gantrySinking, 0]));
 
 gantry.addChild(flatRail, flatRailPlacementInGantry);
-gantry.addChild(flatRail, flatRailPlacementInGantry.translate(0, -interFlatRail - 2 * washerUnderRail).rotate(180));
+gantry.addChild(
+  flatRail,
+  flatRailPlacementInGantry
+    .translate(0, -interFlatRail - 2 * washerUnderRail)
+    .rotate(180),
+);
 
 gantry.addChild(screwAssy, screwPlacementInGantry);
 
@@ -159,23 +169,6 @@ const centeredBolt = [cnf(0.5)];
 
 joinParts(gantryHalf, bottom, inner, [cnf(0.8), tm(0.65), cnf(0.1)]);
 joinParts(gantryHalf, bottom, outer, layout);
-
-const aluExtrusionCenterOnBottom = locateOriginOnFlatPart(
-  gantry,
-  bottom,
-  aluExtrusion,
-);
-const aluBoltClearance = Path.makeRoundedRect(
-  aluExtrusionThickness,
-  2 * (woodThickness + 10),
-  roundingRadius,
-).recenter({ onlyY: true });
-
-bottom.assignOutsidePath(
-  bottom.outside.booleanDifference(
-    aluBoltClearance.translate(aluExtrusionCenterOnBottom),
-  ),
-);
 
 function makeGantryJoin(name, placement) {
   const joinPath = makeShelfOnPlane(
@@ -378,7 +371,7 @@ fastenSubpartToFlatPartEdge(
   getBoltAndBarrelNut,
 );
 
-boltThreadedSubpartToFlatPart(
+const [aluToInnerBolt] = boltThreadedSubpartToFlatPart(
   gantry,
   aluExtrusion,
   inner,
@@ -392,6 +385,11 @@ boltThreadedSubpartToFlatPart(
   aluEndHolesIterator,
   getFastenerKit,
 );
+
+clearBoltOnFlatPart(gantry, bottom, aluToInnerBolt.child, { ignore: true });
+clearBoltOnFlatPart(gantry, secondBottom, aluToInnerBolt.child, {
+  ignore: true,
+});
 
 const towerPlacement = gantry
   .findChild(flatRail)

@@ -32,6 +32,7 @@ const sideHoleDiameter = 5.5;
 const topHoleDiameter = 6.6;
 export const shaftY = 18 + holeOffset;
 const shaftHoleDiameter = 20;
+const bkfShoulder = bkf12Height - indentDepth;
 
 console.assert(shaftY === screwCenterToSupport);
 const shaftDiameter = 16;
@@ -42,11 +43,8 @@ const shaftHole = Path.makeCircle(shaftHoleDiameter / 2).translate(shaftCenter);
 const supportProfile = new Path();
 supportProfile.moveTo([0, 0]);
 supportProfile.lineTo([bfk12Width / 2, 0]);
-supportProfile.lineTo([bfk12Width / 2, bkf12Height - indentDepth]);
-supportProfile.lineTo([
-  bfk12Width / 2 - indentWidth,
-  bkf12Height - indentDepth,
-]);
+supportProfile.lineTo([bfk12Width / 2, bkfShoulder]);
+supportProfile.lineTo([bfk12Width / 2 - indentWidth, bkfShoulder]);
 supportProfile.lineTo([bfk12Width / 2 - indentWidth, bkf12Height]);
 supportProfile.lineTo([0, bkf12Height]);
 supportProfile.mirror();
@@ -122,6 +120,14 @@ export const bkPlateCutout = new Path();
   spindleCleared2LineTo(bkPlateCutout, [0, halfSide], defaultSpindleSize / 2);
   bkPlateCutout.mirror(zero2, y2);
   bkPlateCutout.mirror();
+}
+
+export function* bkfTopHoleFinder(part) {
+  const holes = part === bf12 ? bfTopHoles : bkTopHoles;
+  const depth = bkfShoulder;
+  for (const holeInfo of retrieveOperations(holes).slice(0, -1)) {
+    yield { hole: holeInfo.outsides[0], depth, transform: holeInfo.placement };
+  }
 }
 
 export function* bkfHoleFinder(part) {
@@ -245,4 +251,3 @@ export const rollerContactSurface = a2m(
   [0, -rollerThickness / 2, rollerWidth / 2],
   ny3,
 );
-
