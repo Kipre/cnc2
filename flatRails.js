@@ -8,6 +8,7 @@ import { plus3 } from "./cade/tools/3d.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m } from "./cade/tools/transform.js";
+import { zRailLength } from "./dimensions.js";
 
 const railWidth = 12;
 export const flatRailTotalHeight = 13;
@@ -67,7 +68,7 @@ export function flatRailHolesIterator(length) {
 }
 
 export const flatRail = makeFlatRail(1000);
-export const shortFlatRail = makeFlatRail(350);
+export const shortFlatRail = makeFlatRail(zRailLength);
 
 const thickenedRailProfile = railProfile.offset(-1);
 export const flatChariotWidth = 27;

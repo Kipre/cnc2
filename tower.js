@@ -78,7 +78,7 @@ const interHorizontalPlates =
 const frontPlateToExtrusion = 10;
 const roomForABolt = 5;
 
-const railSupportLength = zRailLength + 2 * roomForABolt;
+const railSupportLength = zRailLength + roomForABolt;
 const frontPlateHeight = railSupportLength - 2 * woodThickness;
 export const frontPlate = new FlatPart(
   "tower plate",
@@ -157,8 +157,8 @@ const shortRailPlacement = locateWithConstraints({
   from: a2m(zero3, y3),
   to: getFacePlacement(railBase, zero2, ny2),
 })
-  .rotate(0, 90)
-  .translate(woodThickness / 2, 0, roomForABolt);
+  .rotate(0, -90)
+  .translate(-woodThickness / 2, 0, -zRailLength);
 
 railSupport.addChild(
   shortFlatRail,
