@@ -51,6 +51,7 @@ import {
   motorSupportWidth,
   roundingRadius,
   woodThickness,
+  zPosition,
   zRailLength,
 } from "./dimensions.js";
 import {
@@ -67,6 +68,7 @@ import {
   flatRailTotalHeight,
   shortFlatRail,
 } from "./flatRails.js";
+import { head } from "./head.js";
 import { motorCenteringHole, motorHolesGetter, nema23 } from "./motor.js";
 import {
   baseSurfaceToRollerSurface,
@@ -285,7 +287,7 @@ joinParts(tower, bottom, otherRailBase, centeredBolt);
 const middle = new FlatPart(
   "tower middle join",
   woodThickness,
-  middleShelfMaker.make(true),
+  middleShelfMaker.make(),
 );
 const locatedMiddle = tower.addChild(middle, middleJoinLocation);
 
@@ -434,3 +436,12 @@ top.addInsides(motorCenteringHole.translate(motorCenterOnSupport));
 joinParts(tower, frontPlate, top, centeredBolt, [], centeredBolt);
 joinParts(tower, rightSideSupport, top, centeredBolt);
 joinParts(tower, leftSideSupport, top, centeredBolt);
+joinParts(tower, rightSideSupport, middle, [cnf(0.7)]);
+joinParts(tower, leftSideSupport, middle, [cnf(0.7)]);
+
+const headPlacement = tower
+  .findChild(shortFlatRail)
+  .placement.multiply(head.findChild(flatChariot).placement.inverse());
+
+tower.addChild(head, headPlacement.translate(0, 0, zPosition));
+

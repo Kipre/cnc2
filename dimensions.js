@@ -61,6 +61,8 @@ export const interFlatRail = aluExtrusionHeight;
 
 export const gantryPosition = 450;
 export const xPosition = 450;
+export const zPosition = 150;
+
 export const yRailPlacementOnTunnel = joinWidth / 2 + woodThickness / 2;
 
 export const aluExtrusionOffsetInGantry = 60;
