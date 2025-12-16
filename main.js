@@ -1,6 +1,7 @@
 // @ts-check
 
 import { base } from "./base.js";
+// import { box } from "./box.js";
 import { Model } from "./cade/lib/lib.js";
 import { gantryPosition } from "./dimensions.js";
 import { gantry } from "./gantry.js";
@@ -10,6 +11,7 @@ export default 1;
 
 const model = new Model("cnc");
 model.addChild(base);
+// model.addChild(box);
 
 const gantryPlacement = model
   .findChild(yRail)

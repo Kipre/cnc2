@@ -14,6 +14,7 @@ import {
   motorSide,
   motorSupportWidth,
   roundingRadius,
+  woodThickness,
 } from "./dimensions.js";
 
 const side = motorSide;
@@ -122,13 +123,25 @@ export const coupler = new Part(
 coupler.material = metalMaterial;
 
 export const motorSideClearance = Path.makeRoundedRect(
-  2 * motorSupportWidth,
-  motorSupportWidth,
+  // 2.1 * motorSide,
+  1.2 * motorSide,
+  1.2 * motorSide,
   roundingRadius,
-).translate([
-  -3 * motorSupportWidth / 2,
-  -motorSupportWidth / 2,
-]);
+)
+  .recenter()
+
+export const motorSideClearance1 = Path.makeRoundedRect(
+  motorSide * 1.5,
+  motorSide * 1.2,
+  roundingRadius,
+)
+  .recenter()
+  .translate([-8, 0]);
+
+export const lengthwiseClearance = Path.makeRect(bodyLength, 1.2 * motorSide)
+  .offset([woodThickness + 15, 0, 0, 0])
+  .recenter({ onlyY: true });
+lengthwiseClearance.roundFilletAll(roundingRadius);
 
 export const motorWithCoupler = new Assembly("motor with coupler");
 motorWithCoupler.addChild(coupler, a2m([0, 0, -couplingDepth]));

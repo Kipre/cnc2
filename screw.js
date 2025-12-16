@@ -180,7 +180,7 @@ export const shortScrewAssy = makeScrewAssembly(300);
 
 const rollerLength = 40;
 export const rollerThickness = 40;
-const rollerWidth = 52;
+export const rollerWidth = 52;
 
 // TODO: check this
 export const rollerCenterToHole = [40 / 2, 24 / 2];
@@ -192,10 +192,7 @@ const ballScrewPlateDiameter = 48;
 
 export const baseSurfaceToRollerSurface = shaftY + rollerThickness / 2;
 
-const rollerBbox = Path.makeRect(rollerWidth, rollerThickness).translate([
-  -rollerWidth / 2,
-  -rollerThickness / 2,
-]);
+export const rollerBbox = Path.makeRect(rollerWidth, rollerThickness).recenter();
 
 const rollerProfile = new Path();
 rollerProfile.moveTo([0, -rollerThickness / 2]);

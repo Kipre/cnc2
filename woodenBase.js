@@ -1,62 +1,74 @@
 // @ts-check
 
+import { otherSide, tunnelTop, yRailPlacement } from "./assemblyInvariants.js";
 import {
   bridge,
+  bridgeCenter,
   innerBridge,
   outerBridge,
   secondBridge,
   secondInnerBridge,
   secondOuterBridge,
 } from "./bridge.js";
-import { nx3, nz3, x3, y3, z3, zero3 } from "./cade/lib/defaults.js";
+import { x3, y3 } from "./cade/lib/defaults.js";
+import {
+  clearBoltOnFlatPart3,
+  fastenSubpartToFlatPart,
+} from "./cade/lib/fastening.js";
 import {
   FlatPart,
-  findFlatPartIntersection,
-  halfLapCrossJoin,
   joinParts,
 } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
-import { fastenSubpartToFlatPart } from "./cade/lib/fastening.js";
-import { makeShelfOnPlane } from "./cade/lib/shelf.js";
-import { DrawerSlot, makeTenon, TenonMortise } from "./cade/lib/slots.js";
+import { makeShelfOnPlane, ShelfMaker } from "./cade/lib/shelf.js";
+import {
+  CenterDrawerSlot,
+  DrawerSlot,
+  TenonMortise,
+} from "./cade/lib/slots.js";
 import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { mult3 } from "./cade/tools/3d.js";
-import { debugGeometry } from "./cade/tools/svg.js";
 import {
   a2m,
+  locateWithConstraints,
   transformOnlyOrigin,
-  transformPoint3,
 } from "./cade/tools/transform.js";
 import {
-  bfkSupportExtension,
+  bridgeHeight,
   bridgeTop,
-  defaultSpindleSize,
   joinOffset,
-  joinSpace,
   joinWidth,
-  motorSupportWidth,
   openArea,
-  screwShaftZ,
-  screwSinking,
   tunnelHeight,
-  tunnelOpeningHeight,
+  tunnelWidth,
   woodThickness,
-  xRailSupportWidth,
-  yRailEndSpace,
-  yRailPlacementOnTunnel,
+  xOverwidth,
 } from "./dimensions.js";
-import { CylinderNutFastener, defaultSlotLayout, getFastenerKit } from "./fasteners.js";
-import { motorHolesGetter, motorWithCoupler, nema23 } from "./motor.js";
+import {
+  btbLayout,
+  CylinderNutFastener,
+  defaultSlotLayout,
+  getFastenerKit,
+} from "./fasteners.js";
+import {
+  lengthwiseClearance,
+  motorCenteringHole,
+  motorHolesGetter,
+  motorSideClearance,
+  nema23,
+} from "./motor.js";
 import { yRail, yRailHoleFinder } from "./rails.js";
 import {
   bf12,
+  bfk12Width,
   bk12,
-  bk12Thickness,
-  bkfHoleFinder,
-  bkPlateCutout,
+  bkfTopHoleFinder,
   screwAssy,
 } from "./screw.js";
 import { innerTunnel, outerTunnel, tunnel } from "./tunnel.js";
+
+const tm = (x) => new TenonMortise(x);
+const cnf = (x) => new CylinderNutFastener(x);
 
 const machineCenter = [openArea.x / 2, openArea.y / 2, 0];
 const mirrorX = new DOMMatrix()
@@ -66,18 +78,18 @@ const mirrorX = new DOMMatrix()
 
 export const woodenBase = new Assembly("wooden frame");
 
-const bridgePlacement = a2m([-xRailSupportWidth, -woodThickness, 0]);
+const bridgePlacement = a2m([-tunnelWidth, -woodThickness, 0]);
 woodenBase.addChild(bridge, bridgePlacement);
 
 const secondBridgePlacement = a2m([
-  -xRailSupportWidth,
+  -tunnelWidth,
   joinWidth + openArea.y + woodThickness,
   0,
 ]);
 woodenBase.addChild(secondBridge, secondBridgePlacement);
 
 const tunnelPlacement = a2m(
-  [-woodThickness, -joinWidth - woodThickness, 0],
+  [-xOverwidth - woodThickness, -joinWidth - woodThickness, 0],
   x3,
   y3,
 );
@@ -88,43 +100,75 @@ const locatedInnerTunnel = woodenBase.findChild(innerTunnel);
 const locatedOuterTunnel = woodenBase.findChild(outerTunnel);
 const locatedSecondInnerBridge = woodenBase.findChild(secondInnerBridge);
 
-const layout = [
-  new CylinderNutFastener(0.8),
-  new TenonMortise(0.55),
-  new CylinderNutFastener(0.08),
-];
+const screwPlacement = locateWithConstraints({
+  from: a2m(),
+  to: otherSide(locatedOuterTunnel.placement),
+})
+  .rotate(0, 0, 180)
+  // TODO
+  .translate(
+    -woodThickness - 1003,
+    -tunnelHeight - woodThickness - bfk12Width / 2,
+  );
+
+woodenBase.addChild(screwAssy, screwPlacement);
+
+{
+  const centerOnBridge = locateOriginOnFlatPart(
+    woodenBase,
+    outerBridge,
+    nema23,
+  );
+  innerBridge.addInsides(motorCenteringHole.translate(centerOnBridge));
+  innerBridge.assignOutsidePath(
+    innerBridge.outside
+      .realBooleanUnion(motorSideClearance.translate(centerOnBridge))
+      .invert(),
+  );
+  outerBridge.addInsides(motorSideClearance.translate(centerOnBridge));
+  outerBridge.assignOutsidePath(
+    outerBridge.outside
+      .realBooleanUnion(motorSideClearance.offset(15).translate(centerOnBridge))
+      .invert(),
+  );
+
+  const centerOnTunnel = locateOriginOnFlatPart(
+    woodenBase,
+    outerTunnel,
+    nema23,
+  );
+  outerTunnel.assignOutsidePath(
+    outerTunnel.outside.booleanDifference(
+      lengthwiseClearance.rotate(Math.PI).translate(centerOnTunnel),
+    ),
+  );
+}
+
 const centeredBolt = [new CylinderNutFastener(0.5)];
-const layout2 = [
-  new CylinderNutFastener(0.07),
-  new TenonMortise(0.25),
-  new CylinderNutFastener(0.85),
-];
 
 const joins = [];
 
-const nutAndSlot = [new CylinderNutFastener(0.65), new TenonMortise(0.3)];
+joinParts(woodenBase, innerTunnel, secondInnerBridge, [cnf(0.7)]);
+joinParts(woodenBase, secondInnerBridge, outerTunnel, btbLayout(3));
+joinParts(woodenBase, secondOuterBridge, outerTunnel, btbLayout(3));
 
-joinParts(woodenBase, innerBridge, innerTunnel, layout);
-joinParts(woodenBase, innerTunnel, innerBridge, [new CylinderNutFastener(0.3)]);
-joinParts(woodenBase, innerTunnel, outerBridge, layout2);
-joinParts(woodenBase, innerBridge, outerTunnel, centeredBolt, centeredBolt);
-joinParts(woodenBase, outerBridge, outerTunnel, centeredBolt, nutAndSlot);
-
-joinParts(woodenBase, secondInnerBridge, innerTunnel, layout);
-joinParts(woodenBase, innerTunnel, secondInnerBridge, [
-  new CylinderNutFastener(0.3),
-]);
-joinParts(woodenBase, innerTunnel, secondOuterBridge, layout2);
+joinParts(woodenBase, innerTunnel, innerBridge, [cnf(0.3)]);
 joinParts(
   woodenBase,
-  secondInnerBridge,
+  innerBridge,
   outerTunnel,
-  centeredBolt,
+  [new DrawerSlot(), cnf(0.6)],
   centeredBolt,
 );
-joinParts(woodenBase, secondOuterBridge, outerTunnel, centeredBolt, nutAndSlot);
+joinParts(
+  woodenBase,
+  outerBridge,
+  outerTunnel,
+  [new DrawerSlot(), cnf(0.6)],
+  centeredBolt,
+);
 
-const center = openArea.x / 2 + xRailSupportWidth;
+const center = openArea.x / 2 + tunnelWidth;
 
 const postMirror = [];
 for (const [br, innBr, outBr] of [
@@ -133,7 +177,7 @@ for (const [br, innBr, outBr] of [
 ]) {
   for (const zee of [
     bridgeTop - joinOffset - woodThickness,
-    openArea.z + joinOffset,
+    bridgeHeight + joinOffset,
   ]) {
     const joinMatrix = a2m([0, 0, zee]);
     const joinPath = makeShelfOnPlane(
@@ -153,13 +197,6 @@ for (const [br, innBr, outBr] of [
   }
   const [upper, lower] = joins.slice(-2);
 
-  halfLapCrossJoin(
-    locatedInnerTunnel,
-    woodenBase.findChild(lower),
-    br === bridge,
-  );
-  joinParts(woodenBase, innerTunnel, upper, centeredBolt);
-
   postMirror.push(() => {
     upper.mirror([center, 0], [center, 1]);
     lower.mirror([center, 0], [center, 1]);
@@ -167,145 +204,103 @@ for (const [br, innBr, outBr] of [
     joinParts(br, upper, innBr, defaultSlotLayout);
     joinParts(br, upper, outBr, defaultSlotLayout);
 
-    joinParts(br, lower, outBr, centeredBolt, defaultSlotLayout, centeredBolt);
+    joinParts(br, lower, outBr, defaultSlotLayout);
     joinParts(br, lower, innBr, defaultSlotLayout);
   });
 }
 
-const tunnelJoins = [];
-for (const zee of [tunnelHeight - joinOffset - woodThickness, joinOffset]) {
-  const joinMatrix = a2m([0, 0, zee], z3, y3);
-  const joinPath = makeShelfOnPlane(
-    joinMatrix,
-    { woodThickness, joinOffset, zonePoint: [300, 57] },
-    locatedInnerTunnel,
-    locatedInnerBridge,
-    locatedOuterTunnel,
-    locatedSecondInnerBridge,
+const joinPath = new ShelfMaker(tunnelTop, {
+  woodThickness,
+  joinOffset,
+  zonePoint: [300, 57],
+})
+  .addFlatPart(locatedInnerTunnel)
+  .addFlatPart(locatedOuterTunnel)
+  .addFlatPart(locatedInnerBridge, true)
+  .addFlatPart(locatedSecondInnerBridge, true)
+  .make();
+
+const tunnelJoin = new FlatPart("tunnel shelf", woodThickness, joinPath);
+
+tunnel.addChild(tunnelJoin, tunnelPlacement.inverse().multiply(tunnelTop));
+
+joinParts(woodenBase, tunnelJoin, innerBridge, centeredBolt);
+joinParts(woodenBase, tunnelJoin, secondInnerBridge, centeredBolt);
+
+const sideSupportDrawers = (length) =>
+  Array.from(
+    { length },
+    (x, i) => new CenterDrawerSlot((i + 0.5) / length, false),
   );
-  const join = new FlatPart(`tunnel join at ${zee}`, woodThickness, joinPath);
 
-  tunnel.addChild(join, tunnelPlacement.inverse().multiply(joinMatrix));
-  tunnelJoins.push(join);
+const nbDrawers = 5;
+joinParts(tunnel, innerTunnel, tunnelJoin, sideSupportDrawers(nbDrawers));
+joinParts(
+  tunnel,
+  tunnelJoin,
+  innerTunnel,
+  ...Array.from({ length: nbDrawers }, () => centeredBolt),
+);
 
-  joinParts(woodenBase, join, innerBridge, centeredBolt);
-  joinParts(woodenBase, join, secondInnerBridge, centeredBolt);
-  joinParts(tunnel, join, innerTunnel, defaultSlotLayout);
-  joinParts(tunnel, join, outerTunnel, defaultSlotLayout);
+joinParts(tunnel, tunnelJoin, outerTunnel, defaultSlotLayout);
+joinParts(woodenBase, tunnelJoin, innerBridge, centeredBolt);
+
+fastenSubpartToFlatPart(
+  woodenBase,
+  nema23,
+  innerBridge,
+  motorHolesGetter,
+  getFastenerKit,
+);
+fastenSubpartToFlatPart(
+  woodenBase,
+  bf12,
+  outerTunnel,
+  bkfTopHoleFinder,
+  getFastenerKit,
+);
+fastenSubpartToFlatPart(
+  woodenBase,
+  bk12,
+  outerTunnel,
+  bkfTopHoleFinder,
+  getFastenerKit,
+);
+
+const centerline = [
+  [bridgeCenter, 0],
+  [bridgeCenter, 1],
+];
+innerBridge.mirror(...centerline);
+outerBridge.mirror(...centerline);
+secondInnerBridge.mirror(...centerline);
+secondOuterBridge.mirror(...centerline);
+
+for (const join of joins) {
+  joinParts(woodenBase, join, outerTunnel, centeredBolt);
 }
-
-let screwPlacement;
-{
-  const locatedMirroredInnerBridge = woodenBase.findChild(secondInnerBridge);
-  const mat = locatedMirroredInnerBridge.placement;
-  const hinge = findFlatPartIntersection(
-    locatedMirroredInnerBridge,
-    locatedOuterTunnel,
-    true,
-    true,
-  );
-
-  const onBridge = a2m(
-    hinge,
-    transformPoint3(mat, z3, true),
-    transformPoint3(mat, nx3, true),
-  );
-
-  const onScrew = a2m(
-    [0, tunnelOpeningHeight / 2 + joinSpace, screwSinking],
-    x3,
-    nz3,
-  );
-  screwPlacement = onBridge.multiply(onScrew.inverse()).rotate(180, 0, 0);
-
-  woodenBase.addChild(screwAssy, screwPlacement);
-
-  fastenSubpartToFlatPart(woodenBase, nema23, innerBridge, motorHolesGetter, getFastenerKit);
-  fastenSubpartToFlatPart(woodenBase, bf12, secondInnerBridge, bkfHoleFinder, getFastenerKit);
-
-  const location = woodenBase.findChild(bk12).placement;
-  const bkSupportPlacement = location.multiply(
-    a2m([bk12Thickness / 2, 0, 0], x3),
-  );
-
-  const bkSupportPath = makeShelfOnPlane(
-    bkSupportPlacement,
-    { woodThickness, joinOffset, zonePoint: [0, 0] },
-    locatedInnerTunnel,
-    woodenBase.findChild(tunnelJoins[0]),
-    locatedOuterTunnel,
-    woodenBase.findChild(tunnelJoins[1]),
-  );
-
-  const bkSupportTenon = makeTenon(
-    motorSupportWidth,
-    bfkSupportExtension,
-    defaultSpindleSize,
-    3,
-  );
-
-  bkSupportPath.insertFeature(bkSupportTenon, 2, {
-    fromStart: screwShaftZ - joinOffset - woodThickness,
-  });
-
-  const bkSupport = new FlatPart(`bk support`, woodThickness, bkSupportPath);
-
-  tunnel.addChild(
-    bkSupport,
-    tunnelPlacement.inverse().multiply(bkSupportPlacement),
-  );
-
-  const shaftCenterOnSupport = locateOriginOnFlatPart(
-    woodenBase,
-    bkSupport,
-    screwAssy.children.at(-1).child,
-  );
-
-  bkSupport.assignOutsidePath(
-    bkSupportPath.booleanDifference(
-      bkPlateCutout.translate(shaftCenterOnSupport),
-    ),
-  );
-
-  joinParts(tunnel, bkSupport, innerTunnel, [
-    new CylinderNutFastener(0.8),
-    new TenonMortise(0.3),
-  ]);
-  joinParts(tunnel, bkSupport, tunnelJoins[0], [new DrawerSlot()]);
-  joinParts(tunnel, bkSupport, tunnelJoins[1], [
-    new CylinderNutFastener(0.7),
-    new DrawerSlot(false),
-  ]);
-  joinParts(tunnel, bkSupport, outerTunnel, [], [new CylinderNutFastener(0.2)]);
-
-  fastenSubpartToFlatPart(woodenBase, bk12, bkSupport, bkfHoleFinder, getFastenerKit);
-}
-
-innerBridge.mirror();
-outerBridge.mirror();
-secondInnerBridge.mirror();
-secondOuterBridge.mirror();
-
-joinParts(woodenBase, joins[1], outerTunnel, centeredBolt);
-joinParts(woodenBase, joins[3], outerTunnel, centeredBolt);
 
 for (const func of postMirror) {
   func();
 }
 
-export const yRailPlacement = a2m(
-  [
-    joinWidth + woodThickness + yRailEndSpace,
-    openArea.z - joinOffset,
-    -yRailPlacementOnTunnel,
-  ],
-  x3,
-  nz3,
-);
-
 tunnel.addChild(yRail, yRailPlacement);
 
-fastenSubpartToFlatPart(tunnel, yRail, tunnelJoins[0], yRailHoleFinder, getFastenerKit);
+const boltLocations = fastenSubpartToFlatPart(
+  tunnel,
+  yRail,
+  tunnelJoin,
+  yRailHoleFinder,
+  getFastenerKit,
+).filter((x, i) => i % 4 === 1);
+
+for (const loc of boltLocations) {
+  clearBoltOnFlatPart3(tunnel, innerTunnel, [loc], {
+    depth: 15,
+    width: 16,
+    radius: 7,
+  });
+}
 
 woodenBase.addChild(
   tunnel.mirror(),

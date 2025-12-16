@@ -341,6 +341,22 @@ export class CylinderNutFastener extends BaseSlot {
   }
 }
 
+export function btbLayout(length) {
+  if (length === 3) return (l) => [
+    new CylinderNutFastener(l * 0.2),
+    new TenonMortise(l * 0.5),
+    new CylinderNutFastener(l * 0.8),
+  ];
+
+  if (length === 5) return (l) => [
+    new CylinderNutFastener(l * 0.1),
+    new TenonMortise(l * 0.3),
+    new CylinderNutFastener(l * 0.5),
+    new TenonMortise(l * 0.7),
+    new CylinderNutFastener(l * 0.9),
+  ];
+}
+
 /**
  * @param {number} length
  */

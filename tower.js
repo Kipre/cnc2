@@ -1,10 +1,15 @@
 // @ts-check
 /** @import * as types from './cade/tools/types' */
 
-import { railToScrewPlacement, washerUnderRail } from "./assemblyInvariants.js";
+import {
+  otherSide,
+  railToScrewPlacement,
+  washerUnderRail,
+} from "./assemblyInvariants.js";
 import {
   boltThreadedSubpartToFlatPart,
   clearBoltOnFlatPart,
+  clearBoltOnFlatPart3,
   fastenSubpartToFlatPart,
   fastenSubpartToFlatPartEdge,
 } from "./cade/lib/fastening.js";
@@ -45,9 +50,11 @@ import {
   aluExtrusionHeight,
   aluExtrusionThickness,
   carrierWheelbase,
+  clearBoltHeads,
   defaultSpindleSize,
   interFlatRail,
   joinOffset,
+  motorSide,
   motorSupportWidth,
   roundingRadius,
   woodThickness,
@@ -69,7 +76,7 @@ import {
   shortFlatRail,
 } from "./flatRails.js";
 import { head } from "./head.js";
-import { motorCenteringHole, motorHolesGetter, nema23 } from "./motor.js";
+import { motorCenteringHole, motorHolesGetter, motorSideClearance, nema23 } from "./motor.js";
 import {
   baseSurfaceToRollerSurface,
   bf12,
@@ -91,7 +98,7 @@ const cnf = (x) => new CylinderNutFastener(x);
 
 const interHorizontalPlates =
   aluExtrusionHeight + 2 * flatRailTotalHeight + washerUnderRail;
-const frontPlateToExtrusion = 10;
+const frontPlateToExtrusion = clearBoltHeads;
 const roomForABolt = 5;
 
 const railSupportLength = zRailLength + roomForABolt;
@@ -135,8 +142,7 @@ const backPlate = new FlatPart(
 );
 
 const plateToPlate =
-  shaftY +
-  rollerThickness / 2 +
+  baseSurfaceToRollerSurface +
   aluExtrusionThickness +
   frontPlateToExtrusion +
   woodThickness;
@@ -147,10 +153,6 @@ const backplatePlacement = towerPlatePlacement.translate(
   -plateToPlate,
 );
 tower.addChild(backPlate, backplatePlacement);
-
-function otherSide(placement, other = false) {
-  return placement.multiply(a2m([0, 0, woodThickness], other ? nz3 : z3));
-}
 
 const railBottom = baseSurfaceToRollerSurface - flatRailTotalHeight;
 
@@ -390,10 +392,7 @@ const minimalTop = new ShelfMaker(topPlacement, { woodThickness })
   .addFlatPart(locatedFrontPlate)
   .addFlatPart(tower.findChild(rightSideSupport))
   .addFlatPart(tower.findChild(leftSideSupport))
-  .addFeature(
-    Path.makeRect(motorSupportWidth).recenter(),
-    tower.findChild(nema23).placement,
-  )
+  .addFeature(motorSideClearance, tower.findChild(nema23).placement)
   .addSingleSideOfPart(rightRailSupport, true, true)
   .addSingleSideOfPart(leftRailSupport, false, true)
   .make();
@@ -417,14 +416,14 @@ fastenSubpartToFlatPart(
   bkfTopHoleFinder,
   getFastenerKit,
 );
-const [, nut] = fastenSubpartToFlatPart(
+const fasteners = fastenSubpartToFlatPart(
   tower,
   nema23,
   top,
   motorHolesGetter,
   getFastenerKit,
-);
-clearBoltOnFlatPart(tower, frontPlate, nut.child);
+).filter((x, i) => i % 2 === 1);
+clearBoltOnFlatPart3(tower, frontPlate, fasteners, { depth: 15 });
 
 const motorCenterOnSupport = locateOriginOnFlatPart(
   tower,
@@ -433,7 +432,7 @@ const motorCenterOnSupport = locateOriginOnFlatPart(
 );
 top.addInsides(motorCenteringHole.translate(motorCenterOnSupport));
 
-joinParts(tower, frontPlate, top, centeredBolt, [], centeredBolt);
+joinParts(tower, frontPlate, top, centeredBolt, centeredBolt);
 joinParts(tower, rightSideSupport, top, centeredBolt);
 joinParts(tower, leftSideSupport, top, centeredBolt);
 joinParts(tower, rightSideSupport, middle, [cnf(0.7)]);
@@ -444,4 +443,3 @@ const headPlacement = tower
   .placement.multiply(head.findChild(flatChariot).placement.inverse());
 
 tower.addChild(head, headPlacement.translate(0, 0, zPosition));
-

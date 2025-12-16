@@ -14,7 +14,7 @@ import { rotatePoint } from "./cade/tools/2d.js";
 import { intersectLineAndArc } from "./cade/tools/circle.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m } from "./cade/tools/transform.js";
-import { defaultSpindleSize, yRailLength } from "./dimensions.js";
+import { chariotSide, defaultSpindleSize, yRailLength } from "./dimensions.js";
 
 const yRailWidth = 30;
 const yRailHeight = 29;
@@ -69,7 +69,6 @@ const chariotDiameter = 20;
 const chariotHeight = 27.6;
 export const chariotTop = 17;
 const chariotBottom = chariotHeight - chariotTop;
-const chariotSide = 20;
 export const chariotLength = 39;
 export const railTopToBottom = yRailHeight - yRailDiameter / 2 + chariotTop;
 

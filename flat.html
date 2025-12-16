@@ -11,8 +11,9 @@
     </script>
     <title>cade</title>
     <style>
-      html, body {
-        width:  100%;
+      html,
+      body {
+        width: 100%;
         margin: 0;
         background: #1a1a1a;
         color: white;
@@ -21,12 +22,10 @@
   </head>
   <body>
     <script type="module">
-      import { woodenBase} from "./woodenBase.js";
+      import { box } from "./box.js";
 
-      for (const {item} of Object.values(woodenBase.flatInstances())) 
-      if (item.display)
-        item.display();
-      
+      for (const { item } of Object.values(box.flatInstances()))
+        if (item.display) item.display();
     </script>
   </body>
 </html>

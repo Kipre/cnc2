@@ -7,7 +7,7 @@ export const woodThickness = 15;
 export const carrierWheelbase = 200;
 
 export const typicalWidth = 100;
-export const xRailSupportWidth = typicalWidth;
+export const tunnelWidth = typicalWidth + 10;
 
 export const zAxisTravel = zRailLength - carrierWheelbase;
 
@@ -30,9 +30,11 @@ export const joinWidth = typicalWidth - 2 * woodThickness;
 export const joinSpace = 2 * joinOffset + woodThickness;
 
 export const bridgeTopThickness = zAxisTravel;
-export const bridgeTop = openArea.z + bridgeTopThickness;
 
-export const tunnelHeight = openArea.z;
+export const bridgeHeight = 20;
+export const bridgeTop = bridgeHeight + bridgeTopThickness;
+
+export const tunnelHeight = 50;
 export const tunnelOpeningHeight = tunnelHeight - 15 - 2 * joinSpace;
 
 export const screwShaftZ = tunnelOpeningHeight / 2 + joinSpace;
@@ -63,7 +65,11 @@ export const gantryPosition = 450;
 export const xPosition = 450;
 export const zPosition = 150;
 
-export const yRailPlacementOnTunnel = joinWidth / 2 + woodThickness / 2;
+export const chariotSide = 20;
+export const clearBoltHeads = 10;
+
+export const yRailPlacementOnTunnel = woodThickness / 2;
+export const xOverwidth = -yRailPlacementOnTunnel + chariotSide + woodThickness;
 
 export const aluExtrusionOffsetInGantry = 60;
 
