@@ -15,10 +15,7 @@ import {
   clearBoltOnFlatPart3,
   fastenSubpartToFlatPart,
 } from "./cade/lib/fastening.js";
-import {
-  FlatPart,
-  joinParts,
-} from "./cade/lib/flat.js";
+import { FlatPart, joinParts, makeRoomForATenon } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { makeShelfOnPlane, ShelfMaker } from "./cade/lib/shelf.js";
 import {
@@ -36,6 +33,7 @@ import {
 import {
   bridgeHeight,
   bridgeTop,
+  defaultSpindleSize,
   joinOffset,
   joinWidth,
   openArea,
@@ -142,6 +140,8 @@ woodenBase.addChild(screwAssy, screwPlacement);
       lengthwiseClearance.rotate(Math.PI).translate(centerOnTunnel),
     ),
   );
+
+  makeRoomForATenon(woodenBase, outerBridge, outerTunnel, defaultSpindleSize);
 }
 
 const centeredBolt = [new CylinderNutFastener(0.5)];

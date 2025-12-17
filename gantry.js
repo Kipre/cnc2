@@ -41,6 +41,7 @@ import { DrawerSlot, HornSlot, TenonMortise } from "./cade/lib/slots.js";
 import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { plus } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
+import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import {
   aluExtrusionHeight,
@@ -129,7 +130,7 @@ const supportWidth = motorSide + 60;
 
 const motorSupportPath = outerPath
   .cutOnLine([supportWidth, 0], [supportWidth, 1], true)
-  .offset([0, 0, 0, -woodThickness]);
+  .offset([-woodThickness, 0, 0,0 ]);
 
 export const outer = new FlatPart(
   "outer gantry support",
@@ -394,10 +395,11 @@ gantryHalf.addChild(
   ),
 );
 trimFlatPartWithAnother(gantryHalf, endHolder, inner, true);
+
 joinParts(gantryHalf, endHolder, inner, [
-  new HornSlot(),
-  cnf(0.5),
   new HornSlot(false),
+  cnf(0.5),
+  new HornSlot(),
 ]);
 fastenSubpartToFlatPartEdge(
   gantry,

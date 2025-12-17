@@ -7,9 +7,15 @@ import { Assembly } from "./cade/lib/lib.js";
 import { blackMetalMaterial, metalMaterial } from "./cade/lib/materials.js";
 import { cut, extrusion, fuse } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
-import { BaseSlot, CenterDrawerSlot, TenonMortise } from "./cade/lib/slots.js";
-import { minus, placeAlong, rotatePoint } from "./cade/tools/2d.js";
+import {
+  BaseSlot,
+  CenterDrawerSlot,
+  NoSegmentIndexBaseSlot,
+  TenonMortise,
+} from "./cade/lib/slots.js";
+import { minus, offsetPolyline, placeAlong, rotatePoint } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
+import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m } from "./cade/tools/transform.js";
 
 const washerThickness = 1;
@@ -305,7 +311,7 @@ m6BoltAndBarrelNut.addChild(m6Top);
 m6BoltAndBarrelNut.addChild(cylinderNut, a2m([0, 0, 30]));
 m6BoltAndBarrelNut.symmetries = [0, 0, NaN];
 
-export class CylinderNutFastener extends BaseSlot {
+export class CylinderNutFastener extends NoSegmentIndexBaseSlot {
   /**
    * @param {number} x
    */
@@ -322,15 +328,15 @@ export class CylinderNutFastener extends BaseSlot {
 
   /**
    * @param {FlatPart} part
-   * @param {number} segmentIdx
+   * @param {types.Point} start
+   * @param {types.Point} end
    * @param {number} place
    */
-  materialize(part, segmentIdx, place) {
-    const path = part.outside;
-    const line = path.subpath(segmentIdx, 0, segmentIdx, 1);
-    const [, start1, , end1] = line
-      .offset(-this.offset - this.nutRadius)
-      .getSegmentAt(1);
+  materialize(part, start, end, place) {
+    const [start1, end1] = offsetPolyline(
+      [start, end],
+      -this.offset - this.nutRadius,
+    );
 
     const center1 = placeAlong(start1, end1, { fromStart: place });
 
@@ -342,19 +348,21 @@ export class CylinderNutFastener extends BaseSlot {
 }
 
 export function btbLayout(length) {
-  if (length === 3) return (l) => [
-    new CylinderNutFastener(l * 0.2),
-    new TenonMortise(l * 0.5),
-    new CylinderNutFastener(l * 0.8),
-  ];
+  if (length === 3)
+    return (l) => [
+      new CylinderNutFastener(l * 0.2),
+      new TenonMortise(l * 0.5),
+      new CylinderNutFastener(l * 0.8),
+    ];
 
-  if (length === 5) return (l) => [
-    new CylinderNutFastener(l * 0.1),
-    new TenonMortise(l * 0.3),
-    new CylinderNutFastener(l * 0.5),
-    new TenonMortise(l * 0.7),
-    new CylinderNutFastener(l * 0.9),
-  ];
+  if (length === 5)
+    return (l) => [
+      new CylinderNutFastener(l * 0.1),
+      new TenonMortise(l * 0.3),
+      new CylinderNutFastener(l * 0.5),
+      new TenonMortise(l * 0.7),
+      new CylinderNutFastener(l * 0.9),
+    ];
 }
 
 /**
