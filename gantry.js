@@ -37,7 +37,7 @@ import {
 import { Assembly } from "./cade/lib/lib.js";
 import { Locator } from "./cade/lib/locating.js";
 import { makeShelfOnPlane, ShelfMaker } from "./cade/lib/shelf.js";
-import { DrawerSlot, HornSlot, TenonMortise } from "./cade/lib/slots.js";
+import { CenterDrawerSlot, DrawerSlot, HornSlot, TenonMortise } from "./cade/lib/slots.js";
 import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { plus } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
@@ -65,6 +65,7 @@ import { flatChariot, flatRail } from "./flatRails.js";
 import {
   motorCenteringHole,
   motorHolesGetter,
+  motorSideClearance,
   motorSideClearance1,
   nema23,
 } from "./motor.js";
@@ -84,6 +85,7 @@ import {
   bkPlateCutout,
   roller,
   rollerBbox,
+  rollerContactSurface,
   rollerHoleFinder,
   screwAssy,
   shaftY,
@@ -124,13 +126,13 @@ export const inner = new FlatPart(
 );
 
 outerPath.close();
-outerPath = outerPath.offset([0, 0, 0, gantrySinking]);
+outerPath = outerPath.offset([woodThickness, 0, woodThickness, gantrySinking]);
 
 const supportWidth = motorSide + 60;
 
 const motorSupportPath = outerPath
   .cutOnLine([supportWidth, 0], [supportWidth, 1], true)
-  .offset([-woodThickness, 0, 0,0 ]);
+  .offset([-woodThickness, -woodThickness, 0, 0]);
 
 export const outer = new FlatPart(
   "outer gantry support",
@@ -157,27 +159,15 @@ const rollerPlacement = new Locator()
   .locate()
   // TODO fix this
   .rotate(0, -90)
-  .translate(10, 0, -150);
+  .translate(10, 0, -75);
 
 outer.assignOutsidePath(
   new ShelfMaker(innerLocation, { woodThickness })
     .addFeature(outerPath, innerLocation)
-    .addFeature(rollerBbox.offset(10), rollerPlacement)
+    .addFeature(rollerBbox, rollerPlacement.multiply(rollerContactSurface))
     .make(),
 );
 
-const bottomPlatePath = new ShelfMaker(bottomPlane, { woodThickness })
-  .addFlatPart(locatedInner)
-  .addFlatPart(locatedOuter)
-  .make();
-
-export const bottom = new FlatPart(
-  "bottom gantry support",
-  woodThickness,
-  bottomPlatePath,
-);
-
-gantryHalf.addChild(bottom, bottomPlane);
 
 export const gantry = new Assembly("gantry");
 gantry.addChild(gantryHalf);
@@ -195,11 +185,10 @@ gantry.addChild(
 gantry.addChild(screwAssy, screwPlacementInGantry);
 
 const layout = [cnf(0.85), tm(0.5), cnf(0.15)];
+const drawerLayout = [cnf(0.85), new CenterDrawerSlot(0.5), cnf(0.15)];
 
 const centeredBolt = [cnf(0.5)];
 
-joinParts(gantryHalf, bottom, inner, [cnf(0.9), tm(0.4), cnf(0.1)]);
-joinParts(gantryHalf, bottom, outer, [cnf(0.3), cnf(0.85)]);
 
 function makeGantryJoin(name, placement) {
   const joinPath = makeShelfOnPlane(
@@ -220,18 +209,37 @@ const topLocation = locatedInner.placement.multiply(
   getFacePlacement(inner, zero2, x2),
 );
 
-const frontJoin = makeGantryJoin("gantry top join", frontPlacement);
+const frontJoin = makeGantryJoin("gantry front join", frontPlacement);
 frontJoin.outside.roundFilletAll(roundingRadius);
 joinParts(gantryHalf, inner, frontJoin, layout);
-joinParts(gantryHalf, outer, frontJoin, layout);
+joinParts(gantryHalf, frontJoin, outer, drawerLayout);
 
 const backPlacement = locatedInner.placement.multiply(
   getFacePlacement(inner, zero2, y2),
 );
 const backJoin = makeGantryJoin("gantry back join", backPlacement);
 backJoin.outside.roundFilletAll(roundingRadius);
+
+const bottomPlatePath = new ShelfMaker(bottomPlane, { woodThickness, zonePoint: [100, -30] })
+  .addFlatPart(locatedInner)
+  .addFlatPart(locatedOuter)
+  .addFlatPart(gantryHalf.findChild(backJoin))
+  .addFlatPart(gantryHalf.findChild(frontJoin))
+  .make();
+
+export const bottom = new FlatPart(
+  "bottom gantry support",
+  woodThickness,
+  bottomPlatePath,
+);
+
+gantryHalf.addChild(bottom, bottomPlane);
+joinParts(gantryHalf, bottom, inner, [cnf(0.9), tm(0.4), cnf(0.1)]);
+
+
 joinParts(gantryHalf, inner, backJoin, layout);
-joinParts(gantryHalf, bottom, backJoin, [cnf(0.5)]);
+joinParts(gantryHalf, bottom, backJoin, [cnf(0.4)]);
+joinParts(gantryHalf, bottom, frontJoin, [cnf(0.6)]);
 
 const chariotPlacement = bottomPlacement
   .multiply(chariotContactSurface.rotate(-90).inverse())
@@ -275,7 +283,9 @@ const locations = boltThreadedSubpartToFlatPart(
   getFastenerKit,
   { ignoreMisplacedHoles: true },
 );
+
 clearBoltOnFlatPart3(gantryHalf, bottom, locations);
+joinParts(gantryHalf, bottom, outer, [cnf(0.4), tm(0.7)], centeredBolt);
 
 const secondSupport = gantryHalf.mirror(z3);
 const secondOuter = secondSupport.forkChild(outer);
@@ -293,20 +303,20 @@ const shaftOnInner = locateOriginOnFlatPart(
   screwAssy.children.at(-1).child,
 );
 
-secondOuter.assignOutsidePath(
-  secondOuter.outside.booleanDifference(
-    motorSideClearance1.translate(shaftOnInner),
-  ),
-);
+// secondOuter.assignOutsidePath(
+//   secondOuter.outside.booleanDifference(
+//     motorSideClearance.translate(shaftOnInner),
+//   ),
+// );
+secondOuter.addInsides(motorSideClearance.translate(shaftOnInner));
 
-joinParts(gantryHalf, outer, backJoin, layout);
+joinParts(gantryHalf, backJoin, outer, drawerLayout);
 
 joinParts(
   secondSupport,
-  secondOuter,
   secondBackJoin,
-  centeredBolt,
-  centeredBolt,
+  secondOuter,
+  [cnf(0.2), cnf(0.8)]
 );
 
 secondInner.addInsides(bkPlateCutout.translate(shaftOnInner));
