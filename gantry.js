@@ -159,7 +159,7 @@ const rollerPlacement = new Locator()
   .locate()
   // TODO fix this
   .rotate(0, -90)
-  .translate(10, 0, -75);
+  .translate(10, 0, -120);
 
 outer.assignOutsidePath(
   new ShelfMaker(innerLocation, { woodThickness })
@@ -283,7 +283,7 @@ const locations = boltThreadedSubpartToFlatPart(
 );
 
 clearBoltOnFlatPart3(gantryHalf, bottom, locations);
-joinParts(gantryHalf, bottom, outer, [cnf(0.4), tm(0.7)], centeredBolt);
+joinParts(gantryHalf, bottom, outer, [cnf(0.3), tm(0.7)], centeredBolt);
 
 const secondSupport = gantryHalf.mirror(z3);
 const secondOuter = secondSupport.forkChild(outer);

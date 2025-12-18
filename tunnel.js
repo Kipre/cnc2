@@ -43,9 +43,9 @@ let outerTunnelPath = Path.makeRect(fullWidth * 2, outsideHeight).recenter({
 });
 
 outerTunnelPath = outerTunnelPath.booleanDifference(
-  Path.makeRect(yRange + motorSide * 1.3, dip * 2)
+  Path.makeRect(yRange + motorSide + 10 * 2, dip * 2)
     .recenter()
-    .translate([-67.5, outsideHeight]),
+    .translate([-65, outsideHeight]),
 );
 
 outerTunnelPath.roundFilletAll(roundingRadius);

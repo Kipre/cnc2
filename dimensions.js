@@ -11,13 +11,14 @@ export const tunnelWidth = typicalWidth + 10;
 
 export const zAxisTravel = zRailLength - carrierWheelbase;
 
-export const yRailEndSpace = 18;
+// 10 to clear bolt heads
+export const yRailEndSpace = woodThickness + 10;
 export const aluExtrusionLength = 1000;
 const xRailLength = aluExtrusionLength;
 
 export const openArea = {
   x: xRailLength,
-  y: yRailLength + yRailEndSpace,
+  y: yRailLength + 2 * yRailEndSpace,
   z: zAxisTravel,
 };
 
@@ -61,9 +62,9 @@ export const aluExtrusionThickness = 30;
 
 export const interFlatRail = aluExtrusionHeight;
 
-export const yRange = 770;
-export const gantryPosition = 9 + yRange * 1;
-export const xPosition = 450;
+export const yRange = 800;
+export const gantryPosition = 800;
+export const xPosition = 800;
 export const zPosition = 150;
 
 export const chariotSide = 20;
