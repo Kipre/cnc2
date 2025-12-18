@@ -210,7 +210,6 @@ const topLocation = locatedInner.placement.multiply(
 );
 
 const frontJoin = makeGantryJoin("gantry front join", frontPlacement);
-frontJoin.outside.roundFilletAll(roundingRadius);
 joinParts(gantryHalf, inner, frontJoin, layout);
 joinParts(gantryHalf, frontJoin, outer, drawerLayout);
 
@@ -218,7 +217,6 @@ const backPlacement = locatedInner.placement.multiply(
   getFacePlacement(inner, zero2, y2),
 );
 const backJoin = makeGantryJoin("gantry back join", backPlacement);
-backJoin.outside.roundFilletAll(roundingRadius);
 
 const bottomPlatePath = new ShelfMaker(bottomPlane, { woodThickness, zonePoint: [100, -30] })
   .addFlatPart(locatedInner)

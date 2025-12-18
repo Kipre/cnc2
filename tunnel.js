@@ -4,6 +4,7 @@ import { tunnelOuterLocation } from "./assemblyInvariants.js";
 import { FlatPart } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { Path } from "./cade/tools/path.js";
+import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m } from "./cade/tools/transform.js";
 import {
   bridgeTop,
@@ -11,11 +12,13 @@ import {
   joinSpace,
   joinWidth,
   motorBodyLength,
+  motorSide,
   openArea,
   roundingRadius,
   screwShaftZ,
   tunnelHeight,
   woodThickness,
+  yRange,
 } from "./dimensions.js";
 
 const tunnelPath = Path.makeRect(openArea.y, tunnelHeight);
@@ -28,27 +31,24 @@ export const innerTunnel = new FlatPart(
 );
 
 const bridgeWidth = joinWidth + 2 * woodThickness + joinOffset;
-const extra = joinOffset + 60;
 const fullWidth = openArea.y / 2 + bridgeWidth;
 const motorSpace = motorBodyLength - joinWidth - woodThickness + joinSpace;
 const braceRadius = roundingRadius + joinSpace;
 const outerHeightDiff = 0;
 const dip = 45;
 
-let outerTunnelPath = new Path();
-outerTunnelPath.moveTo([0, 0]);
-outerTunnelPath.lineTo([fullWidth, 0]);
-outerTunnelPath.lineTo([fullWidth, bridgeTop - outerHeightDiff]);
-outerTunnelPath.lineTo([
-  fullWidth - bridgeWidth - extra,
-  bridgeTop - outerHeightDiff,
-]);
-outerTunnelPath.lineTo([
-  fullWidth - bridgeWidth - extra,
-  bridgeTop - outerHeightDiff - dip,
-]);
-outerTunnelPath.lineTo([0, bridgeTop - outerHeightDiff - dip]);
-outerTunnelPath.mirror();
+const outsideHeight = bridgeTop - outerHeightDiff;
+let outerTunnelPath = Path.makeRect(fullWidth * 2, outsideHeight).recenter({
+  onlyX: true,
+});
+
+outerTunnelPath = outerTunnelPath.booleanDifference(
+  Path.makeRect(yRange + motorSide * 1.3, dip * 2)
+    .recenter()
+    .translate([-67.5, outsideHeight]),
+);
+
+outerTunnelPath.roundFilletAll(roundingRadius);
 
 const motorContour = new Path();
 motorContour.moveTo([fullWidth, 0]);
