@@ -31,6 +31,7 @@ export const joinWidth = typicalWidth - 2 * woodThickness;
 export const joinSpace = 2 * joinOffset + woodThickness;
 
 export const bridgeTopThickness = zAxisTravel;
+export const roomForExtrusionBoltHead = 7;
 
 export const bridgeHeight = 20;
 export const bridgeTop = bridgeHeight + bridgeTopThickness;
@@ -63,15 +64,15 @@ export const aluExtrusionThickness = 30;
 export const interFlatRail = aluExtrusionHeight;
 
 export const yRange = 800;
-export const gantryPosition = 800;
-export const xPosition = 800;
+export const gantryPosition = 400;
+export const xPosition = 400;
 export const zPosition = 150;
 
 export const chariotSide = 20;
 export const clearBoltHeads = 10;
 
 export const yRailPlacementOnTunnel = woodThickness / 2;
-export const xOverwidth = -yRailPlacementOnTunnel + chariotSide + woodThickness;
+export const xOverwidth = -yRailPlacementOnTunnel + chariotSide + woodThickness + roomForExtrusionBoltHead;
 
 export const aluExtrusionOffsetInGantry = 60;
 

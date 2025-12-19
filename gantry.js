@@ -52,6 +52,7 @@ import {
   joinOffset,
   motorSide,
   openArea,
+  roomForExtrusionBoltHead,
   roundingRadius,
   woodThickness,
   xPosition,
@@ -140,7 +141,7 @@ export const outer = new FlatPart(
   outerPath,
 );
 
-const gantrySupportWidth = chariotSide * 2 + 22.5;
+const gantrySupportWidth = chariotSide * 2 + 22.5 + roomForExtrusionBoltHead;
 
 export const gantryHalf = new Assembly("gantry half");
 const locatedInner = gantryHalf.addChild(inner, innerLocation);
@@ -241,7 +242,7 @@ joinParts(gantryHalf, bottom, frontJoin, [cnf(0.6)]);
 
 const chariotPlacement = bottomPlacement
   .multiply(chariotContactSurface.rotate(-90).inverse())
-  .translate(chariotSide);
+  .translate(chariotSide + roomForExtrusionBoltHead);
 
 gantryHalf.addChild(chariot, chariotPlacement);
 gantryHalf.addChild(
