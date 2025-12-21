@@ -8,7 +8,7 @@ import { Assembly } from "./cade/lib/lib.js";
 import { nx3, y3, z3, zero3 } from "./cade/tools/defaults.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m } from "./cade/tools/transform.js";
-import { carrierWheelbase, woodThickness } from "./dimensions.js";
+import { carrierWheelbase, roundingRadius, woodThickness } from "./dimensions.js";
 import { getFastenerKit } from "./fasteners.js";
 import {
   flatChariot,
@@ -22,7 +22,13 @@ import { roller, rollerContactSurface, rollerHoleFinder } from "./screw.js";
 export const plate = new FlatPart(
   "head plate",
   woodThickness,
-  Path.makeRect(carrierWheelbase, carrierWheelbase).recenter({ onlyX: true }),
+  Path.makeRect(carrierWheelbase, carrierWheelbase)
+    .recenter({ onlyX: true })
+    .booleanDifference(
+      Path.makeRoundedRect(40, carrierWheelbase / 1.5, roundingRadius)
+        .recenter()
+        .translate([-carrierWheelbase / 2, carrierWheelbase / 2]),
+    ),
 );
 
 export const head = new Assembly("head");
