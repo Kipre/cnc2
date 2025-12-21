@@ -139,7 +139,7 @@ export const motorSideClearance1 = Path.makeRoundedRect(
   .translate([-8, 0]);
 
 export const lengthwiseClearance = Path.makeRect(bodyLength, 1.2 * motorSide)
-  .offset([woodThickness + 15, 0, 0, 0])
+  .offset([woodThickness + 20, 0, 0, 0])
   .recenter({ onlyY: true });
 lengthwiseClearance.roundFilletAll(roundingRadius);
 

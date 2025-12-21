@@ -101,7 +101,7 @@ const gantrySinking = -railTopToBottom + gapFromTunnel;
 const tm = (x) => new TenonMortise(x);
 const cnf = (x) => new CylinderNutFastener(x);
 
-const innerPath = new Path();
+let innerPath = new Path();
 innerPath.moveTo([0, 0]);
 innerPath.lineTo([0, height]);
 
@@ -110,6 +110,7 @@ innerPath.lineTo([width, 0]);
 
 let outerPath = innerPath.clone();
 innerPath.close();
+innerPath = innerPath.offset([0, 0, woodThickness, 0]);
 
 const innerLocation = a2m([0, gantrySinking, 0], nz3, nx3);
 
@@ -186,7 +187,6 @@ gantry.addChild(
 gantry.addChild(screwAssy, screwPlacementInGantry);
 
 const layout = [cnf(0.85), tm(0.5), cnf(0.15)];
-const drawerLayout = [cnf(0.85), new CenterDrawerSlot(0.5), cnf(0.15)];
 
 const centeredBolt = [cnf(0.5)];
 
@@ -205,13 +205,16 @@ function makeGantryJoin(name, placement) {
 
 const frontPlacement = locatedInner.placement.multiply(
   getFacePlacement(inner, zero2, ny2),
-);
+).translate(0, 0, -woodThickness);
 const topLocation = locatedInner.placement.multiply(
   getFacePlacement(inner, zero2, x2),
 );
 
 const frontJoin = makeGantryJoin("gantry front join", frontPlacement);
-joinParts(gantryHalf, inner, frontJoin, layout);
+
+const drawerLayoutRot = [cnf(0.85), new CenterDrawerSlot(0.5, true), cnf(0.15)];
+const drawerLayout = [cnf(0.85), new CenterDrawerSlot(0.5), cnf(0.15)];
+joinParts(gantryHalf, frontJoin, inner, drawerLayoutRot);
 joinParts(gantryHalf, frontJoin, outer, drawerLayout);
 
 const backPlacement = locatedInner.placement.multiply(
@@ -253,7 +256,7 @@ gantryHalf.addChild(
 for (const join of [backJoin, frontJoin]) {
   const railClearanceHeight = 15;
   // TODO
-  const railClearance = Path.makeRect(2 * railClearanceHeight).recenter();
+  const railClearance = Path.makeCircle(railClearanceHeight);
 
   const railOnJoin = locateOriginOnFlatPart(gantry, join, chariot);
 
