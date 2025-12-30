@@ -25,48 +25,38 @@ import {
 const halfBridge = tunnelWidth + openArea.x / 2 + xOverwidth;
 export const bridgeCenter = halfBridge - xOverwidth;
 
-const halfBridgeMaker = (enlargement = 0) => {
-  const p = new Path();
-  p.moveTo([halfBridge, bridgeHeight]);
-  p.lineTo([tunnelWidth - enlargement, bridgeHeight]);
-  spindleClearedLineTo(
-    p,
-    [tunnelWidth - enlargement, 0],
-    defaultSpindleSize / 2,
-    true,
-  );
-  p.lineTo([0, 0]);
-  p.lineTo([0, bridgeTop]);
-  p.lineTo([halfBridge, bridgeTop]);
-  p.close();
-  return p.translate([-xOverwidth, 0]);
-};
-
-const innerBridgePath = halfBridgeMaker(0);
+let bridgePath = new Path();
+bridgePath.moveTo([halfBridge, bridgeHeight]);
+bridgePath.lineTo([tunnelWidth, bridgeHeight]);
+bridgePath.lineTo([tunnelWidth, 0]);
+bridgePath.lineTo([0, 0]);
+bridgePath.lineTo([0, bridgeTop]);
+bridgePath.lineTo([halfBridge, bridgeTop]);
+bridgePath.close();
+bridgePath = bridgePath.translate([-xOverwidth, 0]);
 
 export const innerBridge = new FlatPart(
   "inner bridge",
   woodThickness,
-  innerBridgePath,
+  bridgePath.clone(),
 );
 
 export const secondInnerBridge = new FlatPart(
   "second inner bridge",
   woodThickness,
-  innerBridgePath.clone(),
+  bridgePath.clone(),
 );
 
-const outerBridgePath = halfBridgeMaker(-joinOffset);
 export const outerBridge = new FlatPart(
   "outer bridge",
   woodThickness,
-  outerBridgePath,
+  bridgePath.clone(),
 );
 
 export const secondOuterBridge = new FlatPart(
   "second outer bridge",
   woodThickness,
-  outerBridgePath.clone(),
+  bridgePath,
 );
 
 const motorClearance = new Path();
