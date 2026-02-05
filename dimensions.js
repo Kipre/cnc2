@@ -76,3 +76,5 @@ export const xOverwidth = -yRailPlacementOnTunnel + chariotSide + woodThickness 
 
 export const aluExtrusionOffsetInGantry = 60;
 
+export const cableChainWidth = 40;
+

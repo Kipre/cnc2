@@ -33,6 +33,7 @@ import {
 import {
   bridgeHeight,
   bridgeTop,
+  cableChainWidth,
   defaultSpindleSize,
   joinOffset,
   joinWidth,
@@ -242,7 +243,6 @@ joinParts(
   ...Array.from({ length: nbDrawers }, () => centeredBolt),
 );
 
-joinParts(tunnel, tunnelJoin, outerTunnel, defaultSlotLayout);
 joinParts(woodenBase, tunnelJoin, innerBridge, centeredBolt);
 
 fastenSubpartToFlatPart(
@@ -302,14 +302,68 @@ for (const loc of boltLocations) {
   });
 }
 
-woodenBase.addChild(
+const { child: secondTunnel } = woodenBase.addChild(
   tunnel.mirror(),
   transformOnlyOrigin(tunnelPlacement, mirrorX),
   true,
 );
 
+const secondTunnelJoin = secondTunnel.forkChild(tunnelJoin);
+const secondOuterTunnel = secondTunnel.forkChild(outerTunnel);
+
 woodenBase.addChild(
   screwAssy.mirror(),
   transformOnlyOrigin(screwPlacement, mirrorX),
   true,
+);
+
+joinParts(tunnel, tunnelJoin, outerTunnel, defaultSlotLayout);
+
+// make a support for the cable chain
+function cableSupportSlotLayout(length) {
+  const offset = 70;
+  const slots = [];
+
+  const start = 0.5 * length;
+
+  const nbFasteners = Math.ceil(length / 250);
+  const fastenerPitch = (length - 2 * offset) / (nbFasteners - 1);
+
+  let lastLocation = offset;
+
+  slots.push(new CylinderNutFastener(lastLocation));
+
+  for (let i = 1; i < nbFasteners; i++) {
+    const location = offset + i * fastenerPitch;
+    if (location > start) break;
+
+    slots.push(new TenonMortise((lastLocation + location) / 2));
+    slots.push(new CylinderNutFastener(location));
+
+    lastLocation = location;
+  }
+
+  const opts = { tenonExtension: cableChainWidth + 10 };
+  const interval = 60;
+
+  lastLocation += interval;
+  let i = 1;
+
+  while (lastLocation + offset < length) {
+    slots.push(new TenonMortise(lastLocation, opts));
+    lastLocation = lastLocation + interval;
+    if (i % 3 === 0)
+      slots.push(new CylinderNutFastener(lastLocation - interval / 2));
+    i += 1;
+  }
+  slots.push(new CylinderNutFastener(length - offset));
+
+  return slots;
+}
+
+joinParts(
+  secondTunnel,
+  secondTunnelJoin,
+  secondOuterTunnel,
+  cableSupportSlotLayout,
 );
