@@ -7,6 +7,8 @@ import { Model } from "./cade/lib/lib.js";
 import { gantryPosition } from "./dimensions.js";
 import { gantry } from "./gantry.js";
 import { chariot, yRail } from "./rails.js";
+import { chainElement } from "./cableChain.js";
+import { a2m } from "./cade/tools/transform.js";
 
 export default 1;
 
@@ -19,6 +21,7 @@ const gantryPlacement = model
   .placement.multiply(gantry.findChild(chariot).placement.inverse());
 
 model.addChild(gantry, gantryPlacement.translate(gantryPosition), true);
+model.addChild(chainElement, a2m());
 
 await model.loadMesh();
 await model.watch();
