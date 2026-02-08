@@ -1,22 +1,17 @@
 // @ts-check
 
-import { nz3, x2, x3, y2, y3, z3, zero2, zero3 } from "./cade/lib/defaults.js";
 import { Assembly } from "./cade/lib/lib.js";
-import { blackMetalMaterial, metalMaterial } from "./cade/lib/materials.js";
-import { cut, extrusion, fuse, multiExtrusion } from "./cade/lib/operations.js";
+import { blackMetalMaterial } from "./cade/lib/materials.js";
+import { extrusion, fuse } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
+import { minus } from "./cade/tools/2d.js";
+import { ny3, x3, y3, z3, zero3 } from "./cade/tools/defaults.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
-import { a2m, transformPoint3 } from "./cade/tools/transform.js";
+import { a2m } from "./cade/tools/transform.js";
 import {
   cableChainWidth,
-  motorBodyLength,
   motorCenteringCylinderDiameter,
-  motorCouplerDiameter,
-  motorSide,
-  motorSupportWidth,
-  roundingRadius,
-  woodThickness,
 } from "./dimensions.js";
 
 const thickness1 = 1.5;
@@ -42,8 +37,6 @@ layer2.lineTo([pitch, height / 2]);
 layer2.arc([pitch, -height / 2], height / 2, 0);
 layer2.close();
 layer2 = layer2.offset([-0.3]);
-
-debugGeometry(layer1, layer2);
 
 export const motorCenteringHole = Path.makeCircle(
   motorCenteringCylinderDiameter / 2,
@@ -95,3 +88,20 @@ export const chainElement = new Part(
   fuse(exterior, interior, dimple, gap1, gap2, exterior2, dimple2, interior2),
 );
 chainElement.material = blackMetalMaterial;
+
+const directrix = new Path();
+directrix.moveTo([0, 0]);
+directrix.lineTo([100, 0]);
+directrix.arc([100, 100], 50, 1);
+directrix.lineTo([0, 100]);
+
+const points = directrix.getEquidistantPoints(pitch);
+
+export const chain = new Assembly("cable chain");
+const rotateVertically = a2m([0, 0, height / 2], ny3);
+
+for (let i = 0; i < points.length - 1; i++) {
+  const point = points[i];
+  const dir = minus(points[i + 1], point);
+  chain.addChild(chainElement, rotateVertically.multiply(a2m([...point, 0], null, [...dir, 0])));
+}

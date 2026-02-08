@@ -4,11 +4,13 @@ import { base } from "./base.js";
 // import { box } from "./box.js";
 // import { box } from "./test.js";
 import { Model } from "./cade/lib/lib.js";
-import { gantryPosition } from "./dimensions.js";
+import { gantryPosition, tunnelWidth, woodThickness, yRailLength } from "./dimensions.js";
 import { gantry } from "./gantry.js";
 import { chariot, yRail } from "./rails.js";
-import { chainElement } from "./cableChain.js";
+import { chain } from "./cableChain.js";
 import { a2m } from "./cade/tools/transform.js";
+import { nz3, y3, z3, zero3 } from "./cade/lib/defaults.js";
+import { secondTunnelJoin } from "./woodenBase.js";
 
 export default 1;
 
@@ -21,7 +23,12 @@ const gantryPlacement = model
   .placement.multiply(gantry.findChild(chariot).placement.inverse());
 
 model.addChild(gantry, gantryPlacement.translate(gantryPosition), true);
-model.addChild(chainElement, a2m());
+model.addChild(
+  chain,
+  base
+    .findChild(secondTunnelJoin)
+    .placement.multiply(a2m([yRailLength / 2, tunnelWidth + 4 * woodThickness, 0], nz3)),
+);
 
 await model.loadMesh();
 await model.watch();

@@ -308,7 +308,7 @@ const { child: secondTunnel } = woodenBase.addChild(
   true,
 );
 
-const secondTunnelJoin = secondTunnel.forkChild(tunnelJoin);
+export const secondTunnelJoin = secondTunnel.forkChild(tunnelJoin);
 const secondOuterTunnel = secondTunnel.forkChild(outerTunnel);
 
 woodenBase.addChild(
