@@ -89,11 +89,16 @@ export const chainElement = new Part(
 );
 chainElement.material = blackMetalMaterial;
 
+const turnDiameter = 75;
+const turnLength = Math.PI * turnDiameter;
+const overallLength = 700;
+
 const directrix = new Path();
 directrix.moveTo([0, 0]);
 directrix.lineTo([100, 0]);
-directrix.arc([100, 100], 50, 1);
-directrix.lineTo([0, 100]);
+directrix.arc([100, turnDiameter], turnDiameter / 2, 1);
+directrix.lineTo([0, turnDiameter]);
+
 
 const points = directrix.getEquidistantPoints(pitch);
 
