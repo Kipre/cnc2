@@ -365,9 +365,14 @@ let topPath;
     .make();
 
   topPath = outerShell.booleanDifference(innerShell);
+
   topPath = topPath
     .offset([-clearBoltHeads, 0, 0, 0, cableChainWidth, 0, 0])
     .cutOnLine([supportWidth, 0], [supportWidth, 1], true);
+
+  const chainSupport = Path.makeRect(cableChainWidth + 5, 120).translate([-55, 1100]);
+  topPath = topPath.realBooleanUnion(chainSupport);
+
   topPath.roundFilletAll(roundingRadius);
 }
 

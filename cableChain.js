@@ -89,24 +89,27 @@ export const chainElement = new Part(
 );
 chainElement.material = blackMetalMaterial;
 
-const turnDiameter = 75;
-const turnLength = Math.PI * turnDiameter;
-const overallLength = 700;
+export function makeChain(deltaX, deltaZ, overallLength = 700) {
+  const turnDiameter = deltaZ;
+  const turnLength = (deltaZ * Math.PI) / 2;
+  const middle = overallLength - turnLength + deltaX / 2;
 
-const directrix = new Path();
-directrix.moveTo([0, 0]);
-directrix.lineTo([100, 0]);
-directrix.arc([100, turnDiameter], turnDiameter / 2, 1);
-directrix.lineTo([0, turnDiameter]);
+  const directrix = new Path();
+  directrix.moveTo([0, 0]);
+  directrix.lineTo([middle, 0]);
+  directrix.arc([middle, turnDiameter], turnDiameter / 2, 1);
+  directrix.lineTo([deltaX, turnDiameter]);
+  const points = directrix.getEquidistantPoints(pitch);
+  const chain = new Assembly(`cable chain ${deltaZ}`);
+  const rotateVertically = a2m([0, 0, height / 2], ny3);
 
-
-const points = directrix.getEquidistantPoints(pitch);
-
-export const chain = new Assembly("cable chain");
-const rotateVertically = a2m([0, 0, height / 2], ny3);
-
-for (let i = 0; i < points.length - 1; i++) {
-  const point = points[i];
-  const dir = minus(points[i + 1], point);
-  chain.addChild(chainElement, rotateVertically.multiply(a2m([...point, 0], null, [...dir, 0])));
+  for (let i = 0; i < points.length - 1; i++) {
+    const point = points[i];
+    const dir = minus(points[i + 1], point);
+    chain.addChild(
+      chainElement,
+      rotateVertically.multiply(a2m([...point, 0], null, [...dir, 0])),
+    );
+  }
+  return chain;
 }

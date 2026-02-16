@@ -221,7 +221,7 @@ const joinPath = new ShelfMaker(tunnelTop, {
   .addFlatPart(locatedSecondInnerBridge, true)
   .make();
 
-const tunnelJoin = new FlatPart("tunnel shelf", woodThickness, joinPath);
+export const tunnelJoin = new FlatPart("tunnel shelf", woodThickness, joinPath);
 
 tunnel.addChild(tunnelJoin, tunnelPlacement.inverse().multiply(tunnelTop));
 
