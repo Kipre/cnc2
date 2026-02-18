@@ -11,9 +11,11 @@ import {
   screwPlacementInGantry,
   washerUnderRail,
 } from "./assemblyInvariants.js";
+import { makeChain } from "./cableChain.js";
 import {
   nx3,
   ny2,
+  ny3,
   nz3,
   x2,
   y2,
@@ -64,6 +66,7 @@ import {
   roundingRadius,
   woodThickness,
   xPosition,
+  xRange,
 } from "./dimensions.js";
 import {
   CylinderNutFastener,
@@ -470,3 +473,12 @@ const towerPlacement = gantry
   .placement.multiply(tower.findChild(flatChariot).placement.inverse());
 
 gantry.addChild(tower, towerPlacement.translate(0, 0, xPosition));
+
+gantry.addChild(
+  makeChain(-xPosition+300, 100, 500),
+  gantry
+    .findChild(top)
+    .placement.multiply(
+      a2m([-10, xRange / 2, woodThickness], z3, ny3),
+    ),
+);

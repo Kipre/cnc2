@@ -4,7 +4,12 @@ import { base } from "./base.js";
 // import { box } from "./box.js";
 // import { box } from "./test.js";
 import { Model } from "./cade/lib/lib.js";
-import { gantryPosition, tunnelWidth, woodThickness, yRailLength } from "./dimensions.js";
+import {
+  gantryPosition,
+  tunnelWidth,
+  woodThickness,
+  yRailLength,
+} from "./dimensions.js";
 import { gantry, top } from "./gantry.js";
 import { chariot, yRail } from "./rails.js";
 import { makeChain } from "./cableChain.js";
@@ -24,18 +29,22 @@ const gantryPlacement = model
 
 model.addChild(gantry, gantryPlacement.translate(gantryPosition), true);
 
-const topPlacement = model.findChild(top).placement; 
-const botPlacement = model.findChild(secondTunnelJoin).placement; 
-// const height = atm3(topPlacement.inverse().multiply(botPlacement), zero3)[2];
-const height = 150;
+const topPlacement = model.findChild(top).placement;
+const botPlacement = model.findChild(secondTunnelJoin).placement;
+const diffVector = atm3(botPlacement.inverse().multiply(topPlacement), zero3);
+const height = -diffVector[2];
+const offcenter = 200;
+const diff = diffVector[0] - 470 - offcenter;
 
-console.log(height);
+console.log(diffVector);
 
 model.addChild(
-  makeChain(-50, height + woodThickness, 500),
+  makeChain(diff, height + woodThickness, 500),
   base
     .findChild(secondTunnelJoin)
-    .placement.multiply(a2m([yRailLength / 2, tunnelWidth + 4 * woodThickness, 0], nz3)),
+    .placement.multiply(
+      a2m([yRailLength / 2 + offcenter, tunnelWidth + 4 * woodThickness, 0], nz3),
+    ),
 );
 
 await model.loadMesh();

@@ -344,7 +344,7 @@ function cableSupportSlotLayout(length) {
   }
 
   const opts = { tenonExtension: cableChainWidth + 10 };
-  const interval = 60;
+  const interval = 180;
 
   lastLocation += interval;
   let i = 1;
@@ -352,11 +352,11 @@ function cableSupportSlotLayout(length) {
   while (lastLocation + offset < length) {
     slots.push(new TenonMortise(lastLocation, opts));
     lastLocation = lastLocation + interval;
-    if (i % 3 === 0)
+    if (i % 1 === 0)
       slots.push(new CylinderNutFastener(lastLocation - interval / 2));
     i += 1;
   }
-  slots.push(new CylinderNutFastener(length - offset));
+  // slots.push(new CylinderNutFastener(length - offset));
 
   return slots;
 }

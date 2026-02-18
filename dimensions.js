@@ -64,8 +64,9 @@ export const aluExtrusionThickness = 30;
 export const interFlatRail = aluExtrusionHeight;
 
 export const yRange = 800;
+export const xRange = 800;
 export const gantryPosition = 200;
-export const xPosition = 200;
+export const xPosition = 600;
 export const zPosition = 0;
 
 export const chariotSide = 20;
