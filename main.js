@@ -36,8 +36,6 @@ const height = -diffVector[2];
 const offcenter = 200;
 const diff = diffVector[0] - 470 - offcenter;
 
-console.log(diffVector);
-
 model.addChild(
   makeChain(diff, height + woodThickness, 500),
   base

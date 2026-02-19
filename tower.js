@@ -15,6 +15,7 @@ import {
 } from "./cade/lib/fastening.js";
 import {
   FlatPart,
+  getFaceOnLocatedFlatPart,
   getFacePlacement,
   joinParts,
   spindleCleared2LineTo,
@@ -27,6 +28,7 @@ import {
   TroughAngleSupport,
 } from "./cade/lib/slots.js";
 import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
+import { norm } from "./cade/tools/2d.js";
 import {
   nx2,
   nx3,
@@ -41,6 +43,7 @@ import {
   zero3,
 } from "./cade/tools/defaults.js";
 import { Path } from "./cade/tools/path.js";
+import { debugGeometry } from "./cade/tools/svg.js";
 import {
   a2m,
   locateWithConstraints,
@@ -76,7 +79,12 @@ import {
   shortFlatRail,
 } from "./flatRails.js";
 import { head } from "./head.js";
-import { motorCenteringHole, motorHolesGetter, motorSideClearance, nema23 } from "./motor.js";
+import {
+  motorCenteringHole,
+  motorHolesGetter,
+  motorSideClearance,
+  nema23,
+} from "./motor.js";
 import {
   baseSurfaceToRollerSurface,
   bf12,
@@ -361,13 +369,31 @@ const rightSideSupport = new FlatPart(
   verticalAngle,
 );
 const leftSideSupport = rightSideSupport.clone();
+
+const supportBbox = rightSideSupport.outside.bbox();
+const supportCenter = [supportBbox.xMin + 30, supportBbox.yMax - 40];
+
+let cableChainSupport = Path.makeRect(40, 100);
+cableChainSupport = cableChainSupport.translate(supportCenter);
+cableChainSupport.roundFilletAll(5);
+
+leftSideSupport.assignOutsidePath(
+  leftSideSupport.outside.realBooleanUnion(cableChainSupport).invert(),
+);
+leftSideSupport.addInsides(Path.makeCircle(10).translate(cableChainSupport.bbox().center()));
+
 const locatedRightSide = tower.addChild(
   rightSideSupport,
   rightSupportPlacement,
 );
-tower.addChild(
+
+const locatedLeftSide = tower.addChild(
   leftSideSupport,
   rightSupportPlacement.translate(0, 0, -backPlateWidth - woodThickness),
+);
+
+export const supportShoulder = getFaceOnLocatedFlatPart(locatedLeftSide, (x) =>
+  norm(x, cableChainSupport.bbox().center()),
 );
 
 for (const part of [rightSideSupport, leftSideSupport]) {

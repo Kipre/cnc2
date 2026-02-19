@@ -50,7 +50,7 @@ import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { plus } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
-import { a2m, transformPoint3 } from "./cade/tools/transform.js";
+import { a2m, atm3, transformPoint3 } from "./cade/tools/transform.js";
 import {
   aluExtrusionHeight,
   aluExtrusionThickness,
@@ -102,7 +102,7 @@ import {
   screwAssy,
   shaftY,
 } from "./screw.js";
-import { tower } from "./tower.js";
+import { supportShoulder, tower } from "./tower.js";
 
 const height = 130;
 const width = carrierWheelbase;
@@ -373,7 +373,9 @@ let topPath;
     .offset([-clearBoltHeads, 0, 0, 0, cableChainWidth, 0, 0])
     .cutOnLine([supportWidth, 0], [supportWidth, 1], true);
 
-  const chainSupport = Path.makeRect(cableChainWidth + 5, 120).translate([-55, 1100]);
+  const chainSupport = Path.makeRect(cableChainWidth + 5, 120).translate([
+    -55, 1100,
+  ]);
   topPath = topPath.realBooleanUnion(chainSupport);
 
   topPath.roundFilletAll(roundingRadius);
@@ -474,11 +476,13 @@ const towerPlacement = gantry
 
 gantry.addChild(tower, towerPlacement.translate(0, 0, xPosition));
 
+const botPlacement = towerPlacement.multiply(supportShoulder);
+const diffVector = atm3(botPlacement.inverse().multiply(topLocation), zero3);
+console.log(diffVector);
+
 gantry.addChild(
-  makeChain(-xPosition+300, 100, 500),
+  makeChain(-xPosition + 300, diffVector[0] + woodThickness, 500),
   gantry
     .findChild(top)
-    .placement.multiply(
-      a2m([-10, xRange / 2, woodThickness], z3, ny3),
-    ),
+    .placement.multiply(a2m([-10, xRange / 2 + 50, woodThickness], z3, ny3)),
 );
