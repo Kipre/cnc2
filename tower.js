@@ -393,7 +393,7 @@ const locatedLeftSide = tower.addChild(
 );
 
 export const supportShoulder = getFaceOnLocatedFlatPart(locatedLeftSide, (x) =>
-  norm(x, cableChainSupport.bbox().center()),
+  -Math.abs(x[0] - cableChainSupport.bbox().xMax),
 );
 
 for (const part of [rightSideSupport, leftSideSupport]) {

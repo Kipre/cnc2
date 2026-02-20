@@ -476,13 +476,11 @@ const towerPlacement = gantry
 
 gantry.addChild(tower, towerPlacement.translate(0, 0, xPosition));
 
-const botPlacement = towerPlacement.multiply(supportShoulder);
-const diffVector = atm3(botPlacement.inverse().multiply(topLocation), zero3);
-console.log(diffVector);
+const chainStart = gantry
+  .findChild(top)
+  .placement.multiply(a2m([-10, xRange / 2 + 50, woodThickness], z3, ny3));
 
-gantry.addChild(
-  makeChain(-xPosition + 300, diffVector[0] + woodThickness, 500),
-  gantry
-    .findChild(top)
-    .placement.multiply(a2m([-10, xRange / 2 + 50, woodThickness], z3, ny3)),
-);
+const endPlacement = towerPlacement.multiply(supportShoulder);
+const diffVector = atm3(endPlacement.inverse().multiply(chainStart), zero3);
+
+gantry.addChild(makeChain(-xPosition + 300, -diffVector[0], 500), chainStart);
