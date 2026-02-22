@@ -22,6 +22,7 @@ import {
   CenterDrawerSlot,
   DrawerSlot,
   TenonMortise,
+  GenericThroughAngleSupport,
 } from "./cade/lib/slots.js";
 import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { mult3 } from "./cade/tools/3d.js";
@@ -150,7 +151,6 @@ const centeredBolt = [new CylinderNutFastener(0.5)];
 const joins = [];
 
 joinParts(woodenBase, innerTunnel, secondInnerBridge, [cnf(0.7)]);
-joinParts(woodenBase, secondInnerBridge, outerTunnel, btbLayout(3));
 joinParts(woodenBase, secondOuterBridge, outerTunnel, btbLayout(3));
 
 joinParts(woodenBase, innerTunnel, innerBridge, [cnf(0.3)]);
@@ -223,7 +223,10 @@ const joinPath = new ShelfMaker(tunnelTop, {
 
 export const tunnelJoin = new FlatPart("tunnel shelf", woodThickness, joinPath);
 
-tunnel.addChild(tunnelJoin, tunnelPlacement.inverse().multiply(tunnelTop));
+const locatedTunnelJoin = tunnel.addChild(
+  tunnelJoin,
+  tunnelPlacement.inverse().multiply(tunnelTop),
+);
 
 joinParts(woodenBase, tunnelJoin, innerBridge, centeredBolt);
 joinParts(woodenBase, tunnelJoin, secondInnerBridge, centeredBolt);
@@ -311,6 +314,8 @@ const { child: secondTunnel } = woodenBase.addChild(
 export const secondTunnelJoin = secondTunnel.forkChild(tunnelJoin);
 const secondOuterTunnel = secondTunnel.forkChild(outerTunnel);
 
+joinParts(woodenBase, secondInnerBridge, outerTunnel, btbLayout(3));
+
 woodenBase.addChild(
   screwAssy.mirror(),
   transformOnlyOrigin(screwPlacement, mirrorX),
@@ -318,6 +323,8 @@ woodenBase.addChild(
 );
 
 joinParts(tunnel, tunnelJoin, outerTunnel, defaultSlotLayout);
+
+const supportDepth = cableChainWidth + 10;
 
 // make a support for the cable chain
 function cableSupportSlotLayout(length) {
@@ -343,8 +350,8 @@ function cableSupportSlotLayout(length) {
     lastLocation = location;
   }
 
-  const opts = { tenonExtension: cableChainWidth + 10 };
-  const interval = 180;
+  const opts = { tenonExtension: supportDepth };
+  const interval = 135;
 
   lastLocation += interval;
   let i = 1;
@@ -367,3 +374,14 @@ joinParts(
   secondOuterTunnel,
   cableSupportSlotLayout,
 );
+
+const supportLevel = woodenBase
+  .findChild(secondInnerBridge)
+  .placement.inverse()
+  .multiply(woodenBase.findChild(tunnelJoin).placement.translate(0, 0, woodThickness));
+
+joinParts(woodenBase, secondInnerBridge, secondOuterTunnel, [
+  new CylinderNutFastener(0.2),
+  new GenericThroughAngleSupport(supportLevel, supportDepth),
+  new CylinderNutFastener(0.9),
+]);

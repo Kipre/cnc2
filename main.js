@@ -33,7 +33,7 @@ const topPlacement = model.findChild(top).placement;
 const botPlacement = model.findChild(secondTunnelJoin).placement;
 const diffVector = atm3(botPlacement.inverse().multiply(topPlacement), zero3);
 const height = -diffVector[2];
-const offcenter = 200;
+const offcenter = 160;
 const diff = diffVector[0] - 470 - offcenter;
 
 model.addChild(

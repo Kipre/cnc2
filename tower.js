@@ -25,7 +25,7 @@ import { ShelfMaker } from "./cade/lib/shelf.js";
 import {
   CenterDrawerSlot,
   TenonMortise,
-  TroughAngleSupport,
+  ThroughAngleSupport,
 } from "./cade/lib/slots.js";
 import { locateOriginOnFlatPart } from "./cade/lib/utils.js";
 import { norm } from "./cade/tools/2d.js";
@@ -320,10 +320,10 @@ boltThreadedSubpartToFlatPart(
 );
 
 joinParts(tower, middle, frontPlate, [
-  new TroughAngleSupport(locatedMiddle, leftRailSupport, true),
+  new ThroughAngleSupport(locatedMiddle, leftRailSupport, true),
   cnf(0.35),
   cnf(0.65),
-  new TroughAngleSupport(locatedMiddle, rightRailSupport),
+  new ThroughAngleSupport(locatedMiddle, rightRailSupport),
 ]);
 joinParts(tower, middle, backPlate, triple);
 
@@ -371,16 +371,21 @@ const rightSideSupport = new FlatPart(
 const leftSideSupport = rightSideSupport.clone();
 
 const supportBbox = rightSideSupport.outside.bbox();
-const supportCenter = [supportBbox.xMin + 30, supportBbox.yMax - 40];
+const supportCenter = [supportBbox.xMin + 58, supportBbox.yMax - 40];
 
-let cableChainSupport = Path.makeRect(40, 100);
+let cableChainSupport = Path.makeRect(40, 110);
 cableChainSupport = cableChainSupport.translate(supportCenter);
-cableChainSupport.roundFilletAll(5);
+// cableChainSupport.roundFilletAll(5);
 
 leftSideSupport.assignOutsidePath(
   leftSideSupport.outside.realBooleanUnion(cableChainSupport).invert(),
 );
-leftSideSupport.addInsides(Path.makeCircle(10).translate(cableChainSupport.bbox().center()));
+
+leftSideSupport.outside.deletePoints((p) => Math.abs(p[0] - 265) < 1);
+leftSideSupport.addInsides(
+  Path.makeCircle(10).translate(cableChainSupport.bbox().center()),
+);
+leftSideSupport.outside.roundFillet(7, 1);
 
 const locatedRightSide = tower.addChild(
   rightSideSupport,
@@ -392,8 +397,9 @@ const locatedLeftSide = tower.addChild(
   rightSupportPlacement.translate(0, 0, -backPlateWidth - woodThickness),
 );
 
-export const supportShoulder = getFaceOnLocatedFlatPart(locatedLeftSide, (x) =>
-  -Math.abs(x[0] - cableChainSupport.bbox().xMax),
+export const supportShoulder = getFaceOnLocatedFlatPart(
+  locatedLeftSide,
+  (x) => -Math.abs(x[0] - cableChainSupport.bbox().xMax),
 );
 
 for (const part of [rightSideSupport, leftSideSupport]) {

@@ -481,6 +481,8 @@ const chainStart = gantry
   .placement.multiply(a2m([-10, xRange / 2 + 50, woodThickness], z3, ny3));
 
 const endPlacement = towerPlacement.multiply(supportShoulder);
-const diffVector = atm3(endPlacement.inverse().multiply(chainStart), zero3);
+// const diffVector = atm3(endPlacement.inverse().multiply(chainStart), zero3);
+// console.log(diffVector);
 
-gantry.addChild(makeChain(-xPosition + 300, -diffVector[0], 500), chainStart);
+gantry.addChild(makeChain(-xPosition + 290, 100, 500), chainStart);
+
