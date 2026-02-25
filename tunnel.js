@@ -1,6 +1,7 @@
 // @ts-check
 
 import { tunnelOuterLocation } from "./assemblyInvariants.js";
+import { y2, zero2 } from "./cade/lib/defaults.js";
 import { FlatPart } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
 import { Path } from "./cade/tools/path.js";
@@ -59,7 +60,11 @@ motorContour.close();
 
 outerTunnelPath = outerTunnelPath
   .scale(-1, 1)
+  .invert()
   .translate([fullWidth - woodThickness - joinOffset, 0]);
+
+// not ideal as it could be done from the beginning
+outerTunnelPath = outerTunnelPath.cutOnLine(zero2, y2);
 
 export const outerTunnel = new FlatPart(
   "outer tunnel",

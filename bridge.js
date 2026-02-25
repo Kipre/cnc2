@@ -3,14 +3,11 @@
 import { ny3, y2, zero2 } from "./cade/lib/defaults.js";
 import { FlatPart, spindleClearedLineTo } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
-import { makeTenon } from "./cade/lib/slots.js";
 import { Path } from "./cade/tools/path.js";
 import { a2m } from "./cade/tools/transform.js";
 import {
-  bfkSupportExtension,
   bridgeHeight,
   bridgeTop,
-  defaultSpindleSize,
   joinOffset,
   joinWidth,
   motorSpaceDepth,
@@ -47,10 +44,13 @@ export const secondInnerBridge = new FlatPart(
   bridgePath.clone(),
 );
 
+const extension = joinOffset + woodThickness;
+const firstOuterBridgePath = bridgePath.clone().offset([0, 0, 0, extension]);
+
 export const outerBridge = new FlatPart(
   "outer bridge",
   woodThickness,
-  bridgePath.clone(),
+  firstOuterBridgePath,
 );
 
 export const secondOuterBridge = new FlatPart(

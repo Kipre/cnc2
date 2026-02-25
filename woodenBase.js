@@ -126,11 +126,6 @@ woodenBase.addChild(screwAssy, screwPlacement);
       .invert(),
   );
   outerBridge.addInsides(motorSideClearance.translate(centerOnBridge));
-  outerBridge.assignOutsidePath(
-    outerBridge.outside
-      .realBooleanUnion(motorSideClearance.offset(15).translate(centerOnBridge))
-      .invert(),
-  );
 
   const centerOnTunnel = locateOriginOnFlatPart(
     woodenBase,
@@ -142,8 +137,6 @@ woodenBase.addChild(screwAssy, screwPlacement);
       lengthwiseClearance.rotate(Math.PI).translate(centerOnTunnel),
     ),
   );
-
-  makeRoomForATenon(woodenBase, outerBridge, outerTunnel, defaultSpindleSize);
 }
 
 const centeredBolt = [new CylinderNutFastener(0.5)];
@@ -163,10 +156,11 @@ joinParts(
 );
 joinParts(
   woodenBase,
-  outerBridge,
   outerTunnel,
+  outerBridge,
+  // TODO wtf
+  [cnf(1)],
   [new DrawerSlot(), cnf(0.6)],
-  centeredBolt,
 );
 
 const center = openArea.x / 2 + tunnelWidth;
@@ -180,12 +174,19 @@ for (const [br, innBr, outBr] of [
     bridgeTop - joinOffset - woodThickness,
     bridgeHeight + joinOffset,
   ]) {
+    const brLoc = woodenBase.findChild(br).placement;
+    const relativeOuterTunnel = { ...locatedOuterTunnel };
+    relativeOuterTunnel.placement = brLoc
+      .inverse()
+      .multiply(locatedOuterTunnel.placement);
+
     const joinMatrix = a2m([0, 0, zee]);
     const joinPath = makeShelfOnPlane(
       joinMatrix,
       { woodThickness, joinOffset, zonePoint: [300, -35] },
       br.findChild(innBr),
       br.findChild(outBr),
+      relativeOuterTunnel,
     );
     const join = new FlatPart(
       `${br.name} join at ${zee}`,
@@ -378,7 +379,9 @@ joinParts(
 const supportLevel = woodenBase
   .findChild(secondInnerBridge)
   .placement.inverse()
-  .multiply(woodenBase.findChild(tunnelJoin).placement.translate(0, 0, woodThickness));
+  .multiply(
+    woodenBase.findChild(tunnelJoin).placement.translate(0, 0, woodThickness),
+  );
 
 joinParts(woodenBase, secondInnerBridge, secondOuterTunnel, [
   new CylinderNutFastener(0.2),
