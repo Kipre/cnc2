@@ -17,6 +17,7 @@ import {
 } from "./cade/lib/fastening.js";
 import { FlatPart, joinParts, makeRoomForATenon } from "./cade/lib/flat.js";
 import { Assembly } from "./cade/lib/lib.js";
+import { Locator } from "./cade/lib/locating.js";
 import { makeShelfOnPlane, ShelfMaker } from "./cade/lib/shelf.js";
 import {
   CenterDrawerSlot,
@@ -43,7 +44,9 @@ import {
   tunnelWidth,
   woodThickness,
   xOverwidth,
+  xRange,
 } from "./dimensions.js";
+import { transformer, transformerHoleFinder } from "./electronics/transformer.js";
 import {
   btbLayout,
   CylinderNutFastener,
@@ -164,6 +167,7 @@ joinParts(
 );
 
 const center = openArea.x / 2 + tunnelWidth;
+let lowerBridgeJoin = null;
 
 const postMirror = [];
 for (const [br, innBr, outBr] of [
@@ -198,6 +202,9 @@ for (const [br, innBr, outBr] of [
     joins.push(join);
   }
   const [upper, lower] = joins.slice(-2);
+
+  if (lowerBridgeJoin === null)
+    lowerBridgeJoin = lower;
 
   postMirror.push(() => {
     upper.mirror([center, 0], [center, 1]);
@@ -388,3 +395,22 @@ joinParts(woodenBase, secondInnerBridge, secondOuterTunnel, [
   new GenericThroughAngleSupport(supportLevel, supportDepth),
   new CylinderNutFastener(0.9),
 ]);
+
+
+const transformerPlacement = new Locator()
+  .onFlatPart(woodenBase.findChild(lowerBridgeJoin), true)
+  .onPerforatedSurface(transformerHoleFinder)
+  .locate()
+  .rotate(0, 90)
+  .translate(-60, 0, xRange + 100);
+
+woodenBase.addChild(transformer, transformerPlacement);
+
+// fastenSubpartToFlatPart(
+//   woodenBase,
+//   transformer,
+//   lowerBridgeJoin,
+//   transformerHoleFinder,
+//   getFastenerKit,
+// );
+
