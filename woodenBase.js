@@ -12,6 +12,7 @@ import {
 } from "./bridge.js";
 import { x3, y3 } from "./cade/lib/defaults.js";
 import {
+  boltThreadedSubpartToFlatPart,
   clearBoltOnFlatPart3,
   fastenSubpartToFlatPart,
 } from "./cade/lib/fastening.js";
@@ -46,7 +47,11 @@ import {
   xOverwidth,
   xRange,
 } from "./dimensions.js";
-import { transformer, transformerHoleFinder } from "./electronics/transformer.js";
+import {
+  transformer,
+  transformerClearance,
+  transformerHoleFinder,
+} from "./electronics/transformer.js";
 import {
   btbLayout,
   CylinderNutFastener,
@@ -203,8 +208,7 @@ for (const [br, innBr, outBr] of [
   }
   const [upper, lower] = joins.slice(-2);
 
-  if (lowerBridgeJoin === null)
-    lowerBridgeJoin = lower;
+  if (lowerBridgeJoin === null) lowerBridgeJoin = lower;
 
   postMirror.push(() => {
     upper.mirror([center, 0], [center, 1]);
@@ -396,21 +400,26 @@ joinParts(woodenBase, secondInnerBridge, secondOuterTunnel, [
   new CylinderNutFastener(0.9),
 ]);
 
-
 const transformerPlacement = new Locator()
-  .onFlatPart(woodenBase.findChild(lowerBridgeJoin), true)
+  .onFlatPart(woodenBase.findChild(innerBridge), true)
   .onPerforatedSurface(transformerHoleFinder)
   .locate()
   .rotate(0, 90)
-  .translate(-60, 0, xRange + 100);
+  .translate(70, 0, xRange + 100);
 
 woodenBase.addChild(transformer, transformerPlacement);
 
-// fastenSubpartToFlatPart(
-//   woodenBase,
-//   transformer,
-//   lowerBridgeJoin,
-//   transformerHoleFinder,
-//   getFastenerKit,
-// );
+const centerOnBridge = locateOriginOnFlatPart(
+  woodenBase,
+  outerBridge,
+  transformer,
+);
+outerBridge.addInsides(transformerClearance.translate(centerOnBridge));
 
+boltThreadedSubpartToFlatPart(
+  woodenBase,
+  transformer,
+  innerBridge,
+  transformerHoleFinder,
+  getFastenerKit,
+);

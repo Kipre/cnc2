@@ -12,6 +12,7 @@ import { Part } from "../cade/lib/part.js";
 import { ny3, x3, y3, z3 } from "../cade/tools/defaults.js";
 import { Path } from "../cade/tools/path.js";
 import { a2m } from "../cade/tools/transform.js";
+import { joinOffset, roundingRadius } from "../dimensions.js";
 
 const transformerWidth = 113;
 const transformerThickness = 50;
@@ -49,3 +50,9 @@ export function* transformerHoleFinder(part) {
 
 export const transformer = new Part("transformer", cut(body, holes));
 transformer.material = metalMaterial;
+
+export const transformerClearance = Path.makeRoundedRect(
+  transformerHeight + 2 * joinOffset,
+  transformerThickness + 2 * joinOffset,
+  roundingRadius,
+).translate([-joinOffset, -joinOffset]);
