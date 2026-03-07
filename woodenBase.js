@@ -48,6 +48,11 @@ import {
   xRange,
 } from "./dimensions.js";
 import {
+  driver,
+  driverClearance,
+  driverHoleFinder,
+} from "./electronics/driver.js";
+import {
   transformer,
   transformerClearance,
   transformerHoleFinder,
@@ -400,12 +405,13 @@ joinParts(woodenBase, secondInnerBridge, secondOuterTunnel, [
   new CylinderNutFastener(0.9),
 ]);
 
+// add electronics
+
 const transformerPlacement = new Locator()
   .onFlatPart(woodenBase.findChild(innerBridge), true)
   .onPerforatedSurface(transformerHoleFinder)
   .locate()
-  .rotate(0, 90)
-  .translate(70, 0, xRange + 100);
+  .translate(100, 70);
 
 woodenBase.addChild(transformer, transformerPlacement);
 
@@ -416,10 +422,33 @@ const centerOnBridge = locateOriginOnFlatPart(
 );
 outerBridge.addInsides(transformerClearance.translate(centerOnBridge));
 
+// TODO use adapted fasteners
 boltThreadedSubpartToFlatPart(
   woodenBase,
   transformer,
   innerBridge,
   transformerHoleFinder,
+  getFastenerKit,
+);
+
+{
+  const start = 450;
+  const height = 10;
+  const pitch = 160;
+  for (let i = 0; i < 4; i++) {
+    const x = start + i * pitch;
+    const location = transformerPlacement.translate(x, height);
+    woodenBase.addChild(driver, location);
+    outerBridge.addInsides(
+      driverClearance.translate(centerOnBridge).translate([x, height]),
+    );
+  }
+}
+
+fastenSubpartToFlatPart(
+  woodenBase,
+  driver,
+  innerBridge,
+  driverHoleFinder,
   getFastenerKit,
 );

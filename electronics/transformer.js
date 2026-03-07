@@ -9,7 +9,7 @@ import {
   retrieveOperations,
 } from "../cade/lib/operations.js";
 import { Part } from "../cade/lib/part.js";
-import { ny3, x3, y3, z3 } from "../cade/tools/defaults.js";
+import { ny3, nz3, x3, y3, z3 } from "../cade/tools/defaults.js";
 import { Path } from "../cade/tools/path.js";
 import { a2m } from "../cade/tools/transform.js";
 import { joinOffset, roundingRadius } from "../dimensions.js";
@@ -23,18 +23,18 @@ const threadDepth = 5;
 
 const body = extrusion(
   a2m(),
-  transformerHeight,
-  Path.makeRect(transformerThickness, transformerWidth),
+  transformerWidth,
+  Path.makeRect(transformerHeight, transformerThickness),
 );
 
 const hole = Path.makeCircle(threadSize / 2);
 
 const holes = multiExtrusion(
-  a2m([0, 0, 0], ny3, x3).translate(0, 0, 5),
+  a2m([0, 0, 0], nz3).translate(0, 0, 5),
   -threadDepth * 2,
   // TODO: check on real part
-  hole.translate([11, 32]),
-  hole.translate([11, transformerHeight - 32]),
+  hole.translate([32, -11]),
+  hole.translate([transformerHeight - 32, -11]),
 );
 
 export function* transformerHoleFinder(part) {
