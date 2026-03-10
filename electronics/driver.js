@@ -20,9 +20,6 @@ const driverWidth = 75;
 const driverThickness = 34;
 const driverLength = 118;
 
-const threadSize = 4;
-const threadDepth = 5;
-
 const sideProfile = new Path();
 sideProfile.moveTo([0, 0]);
 sideProfile.lineTo([0, driverThickness]);

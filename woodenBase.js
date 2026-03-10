@@ -47,6 +47,7 @@ import {
   xOverwidth,
   xRange,
 } from "./dimensions.js";
+import { controller } from "./electronics/controller.js";
 import {
   driver,
   driverClearance,
@@ -414,6 +415,7 @@ const transformerPlacement = new Locator()
   .translate(100, 70);
 
 woodenBase.addChild(transformer, transformerPlacement);
+woodenBase.addChild(controller, transformerPlacement.translate(290, -10));
 
 const centerOnBridge = locateOriginOnFlatPart(
   woodenBase,
