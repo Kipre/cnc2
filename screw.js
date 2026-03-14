@@ -18,7 +18,7 @@ import { Path } from "./cade/tools/path.js";
 import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m, transformPoint3 } from "./cade/tools/transform.js";
 import { defaultSpindleSize, screwCenterToSupport } from "./dimensions.js";
-import { motorWithCoupler } from "./motor.js";
+import { motorWithCoupler, originToMotorSurface } from "./motor.js";
 
 export const bf12Thickness = 20;
 export const bk12Thickness = 25;
@@ -145,8 +145,13 @@ export function* bkfTwoHoleFinder(part) {
   yield it.next().value;
 }
 
+const endBackoff = 51;
+
+/**
+ * @param {number} length
+ */
 function makeScrewAssembly(length) {
-  const distance = length - 51;
+  const distance = length - endBackoff;
   const endLength = 12;
   const endDiameter = 10;
 
@@ -174,7 +179,9 @@ function makeScrewAssembly(length) {
   return result;
 }
 
+
 export const screwAssy = makeScrewAssembly(1000);
+export const distanceToMotorSurface = 1000 + originToMotorSurface;
 
 export const shortScrewAssy = makeScrewAssembly(300);
 
@@ -192,7 +199,10 @@ const ballScrewPlateDiameter = 48;
 
 export const baseSurfaceToRollerSurface = shaftY + rollerThickness / 2;
 
-export const rollerBbox = Path.makeRect(rollerWidth, rollerThickness).recenter();
+export const rollerBbox = Path.makeRect(
+  rollerWidth,
+  rollerThickness,
+).recenter();
 
 const rollerProfile = new Path();
 rollerProfile.moveTo([0, -rollerThickness / 2]);

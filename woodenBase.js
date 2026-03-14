@@ -46,6 +46,7 @@ import {
   woodThickness,
   xOverwidth,
   xRange,
+  yRailLength,
 } from "./dimensions.js";
 import { controller } from "./electronics/controller.js";
 import {
@@ -77,6 +78,7 @@ import {
   bfk12Width,
   bk12,
   bkfTopHoleFinder,
+  distanceToMotorSurface,
   screwAssy,
 } from "./screw.js";
 import { innerTunnel, outerTunnel, tunnel } from "./tunnel.js";
@@ -119,9 +121,8 @@ const screwPlacement = locateWithConstraints({
   to: otherSide(locatedOuterTunnel.placement),
 })
   .rotate(0, 0, 180)
-  // TODO
   .translate(
-    -woodThickness - 1003,
+    woodThickness - distanceToMotorSurface,
     -tunnelHeight - woodThickness - bfk12Width / 2,
   );
 
@@ -168,12 +169,12 @@ joinParts(
   [new DrawerSlot(), cnf(0.6)],
   centeredBolt,
 );
+console.log("here");
 joinParts(
   woodenBase,
   outerTunnel,
   outerBridge,
-  // TODO wtf
-  [cnf(1)],
+  [cnf(0.5)],
   [new DrawerSlot(), cnf(0.6)],
 );
 

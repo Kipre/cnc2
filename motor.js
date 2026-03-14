@@ -127,8 +127,7 @@ export const motorSideClearance = Path.makeRoundedRect(
   1.2 * motorSide,
   1.2 * motorSide,
   roundingRadius,
-)
-  .recenter()
+).recenter();
 
 export const motorSideClearance1 = Path.makeRoundedRect(
   motorSide * 1.5,
@@ -143,10 +142,11 @@ export const lengthwiseClearance = Path.makeRect(bodyLength, 1.2 * motorSide)
   .recenter({ onlyY: true });
 lengthwiseClearance.roundFilletAll(roundingRadius);
 
+export const originToMotorSurface =
+  couplerLength - 2 * couplingDepth + shaftLength;
+
 export const motorWithCoupler = new Assembly("motor with coupler");
+
 motorWithCoupler.addChild(coupler, a2m([0, 0, -couplingDepth]));
-motorWithCoupler.addChild(
-  nema23,
-  a2m([0, 0, couplerLength - 2 * couplingDepth + shaftLength]),
-);
+motorWithCoupler.addChild(nema23, a2m([0, 0, originToMotorSurface]));
 motorWithCoupler.symmetries = [0, 0, NaN];
