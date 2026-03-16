@@ -1,5 +1,5 @@
 // @ts-check
-/** @import * as types from '../tools/types' */
+/** @import * as types from './cade/tools/types' */
 
 import { nz3, x3, zero2 } from "./cade/lib/defaults.js";
 import { FlatPart } from "./cade/lib/flat.js";
@@ -7,15 +7,9 @@ import { Assembly } from "./cade/lib/lib.js";
 import { blackMetalMaterial, metalMaterial } from "./cade/lib/materials.js";
 import { cut, extrusion, fuse } from "./cade/lib/operations.js";
 import { Part } from "./cade/lib/part.js";
-import {
-  BaseSlot,
-  CenterDrawerSlot,
-  NoSegmentIndexBaseSlot,
-  TenonMortise,
-} from "./cade/lib/slots.js";
-import { minus, offsetPolyline, placeAlong, rotatePoint } from "./cade/tools/2d.js";
+import { BaseSlot, TenonMortise } from "./cade/lib/slots.js";
+import { offsetPolyline, placeAlong, rotatePoint } from "./cade/tools/2d.js";
 import { Path } from "./cade/tools/path.js";
-import { debugGeometry } from "./cade/tools/svg.js";
 import { a2m } from "./cade/tools/transform.js";
 
 const washerThickness = 1;
@@ -311,7 +305,7 @@ m6BoltAndBarrelNut.addChild(m6Top);
 m6BoltAndBarrelNut.addChild(cylinderNut, a2m([0, 0, 30]));
 m6BoltAndBarrelNut.symmetries = [0, 0, NaN];
 
-export class CylinderNutFastener extends NoSegmentIndexBaseSlot {
+export class CylinderNutFastener extends BaseSlot {
   /**
    * @param {number} x
    */

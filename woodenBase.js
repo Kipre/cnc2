@@ -169,7 +169,6 @@ joinParts(
   [new DrawerSlot(), cnf(0.6)],
   centeredBolt,
 );
-console.log("here");
 joinParts(
   woodenBase,
   outerTunnel,
